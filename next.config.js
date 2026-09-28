@@ -1,17 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000', '*.vercel.app'],
-    },
   },
   images: {
     remotePatterns: [
