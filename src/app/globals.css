@@ -1,0 +1,495 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Custom Properties ─────────────────────────────────────── */
+:root {
+  --phoenix-orange: #ff6b35;
+  --phoenix-amber: #ffb347;
+  --phoenix-red: #ff2d55;
+  --void-bg: #0a0a0f;
+  --void-card: #111118;
+  --void-border: #1e1e2e;
+  --neon-glow-size: 40px;
+  --cursor-size: 24px;
+}
+
+/* ─── Base ───────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  cursor: none;
+}
+
+body {
+  background-color: var(--void-bg);
+  color: #ffffff;
+  font-family: var(--font-body, system-ui, sans-serif);
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Custom Cursor ─────────────────────────────────────────── */
+#cursor-dot {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: var(--phoenix-orange);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s, height 0.2s, background 0.2s;
+  box-shadow: 0 0 10px var(--phoenix-orange), 0 0 20px rgba(255,107,53,0.5);
+}
+
+#cursor-ring {
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid rgba(255,107,53,0.6);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99998;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease, transform 0.1s ease;
+}
+
+body:has(a:hover) #cursor-ring,
+body:has(button:hover) #cursor-ring,
+body:has([data-cursor="pointer"]:hover) #cursor-ring {
+  width: 56px;
+  height: 56px;
+  border-color: var(--phoenix-orange);
+  box-shadow: 0 0 20px rgba(255,107,53,0.4);
+}
+
+body:has(a:hover) #cursor-dot,
+body:has(button:hover) #cursor-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--phoenix-amber);
+  box-shadow: 0 0 20px var(--phoenix-amber), 0 0 40px rgba(255,179,71,0.6);
+}
+
+/* ─── Custom Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--void-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ff6b35, #ff2d55);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ff9500, #ff6b35);
+}
+
+/* ─── Glass Effects ─────────────────────────────────────────── */
+.glass {
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.glass-card {
+  background: rgba(17,17,24,0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,107,53,0.12);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255,107,53,0.3);
+  box-shadow: 0 0 40px rgba(255,107,53,0.08), 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* ─── Neon Text Effects ─────────────────────────────────────── */
+.neon-text {
+  color: #fff;
+  text-shadow: 0 0 10px var(--phoenix-orange),
+               0 0 20px var(--phoenix-orange),
+               0 0 40px var(--phoenix-orange);
+}
+
+.neon-text-amber {
+  color: var(--phoenix-amber);
+  text-shadow: 0 0 10px var(--phoenix-amber),
+               0 0 20px rgba(255,179,71,0.5);
+}
+
+.phoenix-gradient-text {
+  background: linear-gradient(135deg, #ff6b35 0%, #ffb347 40%, #ff9500 70%, #ff2d55 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, #ff6b35 0%, #ffb347 25%, #fff 50%, #ffb347 75%, #ff6b35 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+
+/* ─── Neon Button Glow ──────────────────────────────────────── */
+.btn-neon {
+  position: relative;
+  background: linear-gradient(135deg, #ff4d00, #ff9500);
+  color: white;
+  border: none;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-neon::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, #ff4d00, #ffcc00, #ff4d00);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-neon:hover::before {
+  opacity: 1;
+}
+
+.btn-neon:hover {
+  box-shadow: 0 0 30px rgba(255,107,53,0.6), 0 0 60px rgba(255,107,53,0.3);
+  transform: translateY(-2px);
+}
+
+.btn-neon:active {
+  transform: translateY(0);
+}
+
+/* ─── Neon Border Cards ─────────────────────────────────────── */
+.neon-border {
+  position: relative;
+}
+
+.neon-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,107,53,0.6), transparent, rgba(255,179,71,0.4));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ─── Animated Grid Background ──────────────────────────────── */
+.grid-bg {
+  background-image: 
+    linear-gradient(rgba(255,107,53,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,107,53,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ─── Phoenix Glow ──────────────────────────────────────────── */
+.phoenix-glow {
+  filter: drop-shadow(0 0 20px rgba(255,107,53,0.8))
+          drop-shadow(0 0 40px rgba(255,107,53,0.5))
+          drop-shadow(0 0 80px rgba(255,77,0,0.3));
+}
+
+.phoenix-fire-aura {
+  position: relative;
+}
+
+.phoenix-fire-aura::after {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(ellipse, rgba(255,107,53,0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: breathe 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ─── Level Progress Bar ─────────────────────────────────────── */
+.xp-bar {
+  background: rgba(255,255,255,0.1);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff4d00, #ff9500, #ffcc00);
+  border-radius: 100px;
+  position: relative;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.xp-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ─── Subject Card Hover ────────────────────────────────────── */
+.subject-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.subject-card:hover {
+  transform: translateY(-8px) rotateX(5deg) rotateY(-5deg);
+}
+
+/* ─── Marvel Intro ──────────────────────────────────────────── */
+.marvel-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.marvel-flash {
+  animation: marvelFlash 0.5s ease-out forwards;
+}
+
+@keyframes marvelFlash {
+  0% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ─── Streak Fire Effect ────────────────────────────────────── */
+.streak-fire {
+  display: inline-block;
+  animation: streakFire 1s ease-in-out infinite alternate;
+}
+
+@keyframes streakFire {
+  0% { filter: drop-shadow(0 0 4px #ff4d00); transform: scale(1); }
+  100% { filter: drop-shadow(0 0 12px #ff9500) drop-shadow(0 0 24px #ffcc00); transform: scale(1.1) rotate(-5deg); }
+}
+
+/* ─── 3D Card Flip (Notes) ──────────────────────────────────── */
+.flip-card {
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+.flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+  position: absolute;
+  inset: 0;
+}
+
+/* ─── Knowledge Map Nodes ───────────────────────────────────── */
+.knowledge-node {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.knowledge-node:hover {
+  filter: drop-shadow(0 0 12px var(--phoenix-orange));
+  transform: scale(1.1);
+}
+
+.knowledge-connection {
+  stroke-dasharray: 5, 5;
+  animation: dashMove 1s linear infinite;
+}
+
+@keyframes dashMove {
+  to { stroke-dashoffset: -10; }
+}
+
+/* ─── Quiz Answer States ────────────────────────────────────── */
+.answer-option {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1.5px solid rgba(255,255,255,0.1);
+}
+
+.answer-option:hover {
+  border-color: rgba(255,107,53,0.5);
+  background: rgba(255,107,53,0.08);
+  box-shadow: 0 0 20px rgba(255,107,53,0.15);
+}
+
+.answer-option.correct {
+  border-color: #30d158;
+  background: rgba(48,209,88,0.12);
+  box-shadow: 0 0 20px rgba(48,209,88,0.2);
+}
+
+.answer-option.incorrect {
+  border-color: #ff2d55;
+  background: rgba(255,45,85,0.12);
+  box-shadow: 0 0 20px rgba(255,45,85,0.2);
+}
+
+.answer-option.selected {
+  border-color: rgba(255,107,53,0.8);
+  background: rgba(255,107,53,0.12);
+}
+
+/* ─── Phoenix Chat Bubble ───────────────────────────────────── */
+.phoenix-bubble {
+  position: relative;
+  background: rgba(17,17,24,0.95);
+  border: 1px solid rgba(255,107,53,0.3);
+  border-radius: 16px 16px 16px 4px;
+  backdrop-filter: blur(20px);
+}
+
+.phoenix-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 20px;
+  width: 16px;
+  height: 16px;
+  background: rgba(17,17,24,0.95);
+  border-right: 1px solid rgba(255,107,53,0.3);
+  border-bottom: 1px solid rgba(255,107,53,0.3);
+  transform: rotate(45deg);
+}
+
+/* ─── Particle Canvas ───────────────────────────────────────── */
+#particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Page Transitions ──────────────────────────────────────── */
+.page-enter {
+  animation: pageEnter 0.4s ease-out forwards;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Scrollbar for code blocks ─────────────────────────────── */
+pre::-webkit-scrollbar {
+  height: 4px;
+}
+pre::-webkit-scrollbar-thumb {
+  background: rgba(255,107,53,0.4);
+  border-radius: 2px;
+}
+
+/* ─── Toast Overrides ───────────────────────────────────────── */
+[data-sonner-toast] {
+  background: rgba(17,17,24,0.95) !important;
+  border: 1px solid rgba(255,107,53,0.2) !important;
+  color: #fff !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* ─── Selection ─────────────────────────────────────────────── */
+::selection {
+  background: rgba(255,107,53,0.3);
+  color: #fff;
+}
+
+/* ─── Loading Shimmer ───────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-load 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-load {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Confetti Override ─────────────────────────────────────── */
+canvas.confetti {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  pointer-events: none !important;
+  z-index: 9998 !important;
+}
+
+/* ─── 3D Scene Container ────────────────────────────────────── */
+.three-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.three-container canvas {
+  display: block;
+}
+
+/* ─── Responsive ────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  #cursor-dot, #cursor-ring {
+    display: none;
+  }
+  html {
+    cursor: auto;
+  }
+}

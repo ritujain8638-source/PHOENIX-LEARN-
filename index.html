@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhoenixLearn — Rise Through Knowledge | Adaptive Learning Platform</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            void: '#0a0a0f',
+            card: '#12121c',
+            border: '#232336',
+            phoenix: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c'
+            },
+            ember: '#ff4d00',
+            solar: '#ffb347',
+            crimson: '#ff2d55'
+          },
+          fontFamily: {
+            display: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0f; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #ff6b35, #ff2d55); border-radius: 3px; }
+
+    /* Custom Cursor */
+    #cursor-dot {
+      position: fixed; width: 8px; height: 8px; background: #ff6b35; border-radius: 50%;
+      pointer-events: none; z-index: 999999; transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px #ff6b35, 0 0 24px rgba(255, 107, 53, 0.6);
+      transition: width 0.15s, height 0.15s, background 0.15s;
+    }
+    #cursor-ring {
+      position: fixed; width: 36px; height: 36px; border: 1.5px solid rgba(255, 107, 53, 0.6);
+      border-radius: 50%; pointer-events: none; z-index: 999998; transform: translate(-50%, -50%);
+      transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .hover-glow:hover ~ #cursor-ring, button:hover ~ #cursor-ring, a:hover ~ #cursor-ring {
+      width: 52px; height: 52px; border-color: #ff9500; box-shadow: 0 0 20px rgba(255, 149, 0, 0.4);
+    }
+
+    /* Ambient Glows */
+    .neon-text-orange {
+      text-shadow: 0 0 20px rgba(255, 107, 53, 0.6), 0 0 40px rgba(255, 77, 0, 0.3);
+    }
+    .glass {
+      background: rgba(18, 18, 28, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(18, 18, 28, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 107, 53, 0.15);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(255, 107, 53, 0.45);
+      box-shadow: 0 0 35px rgba(255, 107, 53, 0.12), 0 10px 30px rgba(0, 0, 0, 0.5);
+      transform: translateY(-3px);
+    }
+
+    /* 3D Flip Card */
+    .flip-box { perspective: 1000px; }
+    .flip-box-inner {
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .flip-box.flipped .flip-box-inner { transform: rotateY(180deg); }
+    .flip-box-front, .flip-box-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .flip-box-back { transform: rotateY(180deg); }
+
+    /* Animated Fire Aura */
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 25px rgba(255, 107, 53, 0.4), 0 0 60px rgba(255, 77, 0, 0.2); }
+      50% { box-shadow: 0 0 50px rgba(255, 149, 0, 0.8), 0 0 100px rgba(255, 107, 53, 0.4); }
+    }
+    .phoenix-aura { animation: pulseGlow 3s ease-in-out infinite; }
+
+    /* Shimmer Effect */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shimmer-sweep {
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: shimmer 2.5s infinite;
+    }
+  </style>
+</head>
+<body class="bg-void text-white font-body min-h-screen selection:bg-orange-500/30 overflow-x-hidden">
+
+  <!-- Interactive Glowing Cursor -->
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+
+  <!-- Ambient Particle Canvas -->
+  <canvas id="particle-canvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+
+  <!-- MARVEL CINEMATIC INTRO OVERLAY (Triggers on demand or subject change) -->
+  <div id="marvel-intro" class="fixed inset-0 z-[999999] bg-black flex flex-col items-center justify-center hidden select-none transition-opacity duration-500">
+    <div class="relative w-80 h-44 flex items-center justify-center border-4 border-white/20 bg-zinc-950/90 rounded-2xl shadow-[0_0_80px_rgba(255,107,53,0.5)] overflow-hidden mb-6">
+      <div id="marvel-flick" class="flex flex-col gap-3 text-center font-mono text-xs tracking-wider text-amber-300/80 animate-pulse">
+        <div class="border-b border-white/10 py-1">∫ e^x (f(x) + f'(x)) dx</div>
+        <div class="border-b border-white/10 py-1">∇ × B = μ₀J + μ₀ε₀(∂E/∂t)</div>
+        <div class="border-b border-white/10 py-1">x = (-b ± √(b²-4ac)) / 2a</div>
+        <div class="border-b border-white/10 py-1">ΔG° = -RT ln K</div>
+      </div>
+      <div class="absolute inset-0 bg-red-600/20 mix-blend-color-dodge pointer-events-none"></div>
+    </div>
+    <div class="text-center space-y-2">
+      <div id="marvel-symbol" class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center text-5xl font-black shadow-[0_0_60px_rgba(255,107,53,0.8)]">
+        ∫
+      </div>
+      <h2 id="marvel-title" class="text-4xl md:text-6xl font-black uppercase tracking-wider bg-clip-text text-transparent bg-gradient-to-b from-white via-zinc-200 to-zinc-500 mt-4">
+        MATHEMATICS
+      </h2>
+      <p id="marvel-tagline" class="text-xs md:text-sm font-mono tracking-[0.3em] text-zinc-400 uppercase">
+        WHERE EQUATIONS MEET ELEGANCE
+      </p>
+    </div>
+    <button onclick="closeMarvelIntro()" class="absolute bottom-8 text-xs font-mono tracking-widest text-zinc-500 hover:text-white border border-white/10 px-4 py-2 rounded-full bg-white/5">
+      SKIP INTRO [ESC]
+    </button>
+  </div>
+
+  <!-- TOP NAVIGATION BAR -->
+  <nav class="sticky top-0 z-40 glass border-b border-white/10 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-6">
+      <a href="#hero" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center shadow-[0_0_20px_rgba(255,107,53,0.5)] group-hover:scale-105 transition-transform">
+          <span class="text-2xl">🔥</span>
+        </div>
+        <div>
+          <span class="font-display font-black text-xl tracking-tight text-white flex items-center gap-1">
+            PHOENIX<span class="text-orange-500">LEARN</span>
+          </span>
+          <span class="text-[9px] font-mono text-zinc-400 block -mt-1 tracking-widest uppercase">Adaptive Intellect OS</span>
+        </div>
+      </a>
+
+      <!-- Nav Links -->
+      <div class="hidden md:flex items-center gap-1 font-mono text-xs">
+        <button onclick="switchView('dashboard')" class="nav-btn px-3 py-1.5 rounded-lg text-white hover:bg-white/5 transition-colors active font-semibold" data-view="dashboard">Dashboard</button>
+        <button onclick="switchView('curriculum')" class="nav-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" data-view="curriculum">RD Sharma Math</button>
+        <button onclick="switchView('quiz')" class="nav-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" data-view="quiz">Adaptive Quiz</button>
+        <button onclick="switchView('knowledge-map')" class="nav-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" data-view="knowledge-map">3D Knowledge Map</button>
+        <button onclick="switchView('simulations')" class="nav-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" data-view="simulations">Physics Lab</button>
+        <button onclick="switchView('contest')" class="nav-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" data-view="contest">Contests Arena</button>
+      </div>
+    </div>
+
+    <!-- User Header Stats & Multi-Profile Pill -->
+    <div class="flex items-center gap-3">
+      <!-- Streak Badge -->
+      <div id="nav-streak-badge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-950/40 border border-orange-500/30 text-orange-400 font-mono text-xs shadow-[0_0_15px_rgba(255,107,53,0.2)]">
+        <span class="text-sm animate-bounce">🔥</span>
+        <span id="nav-streak-text" class="font-bold">7 DAYS</span>
+      </div>
+
+      <!-- XP Counter -->
+      <div id="nav-xp-badge" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 font-mono text-xs">
+        <span>⚡</span>
+        <span id="nav-xp-text" class="font-bold">2,840 XP</span>
+      </div>
+
+      <!-- User Active Profile Button (Opens Multi-Profile & Google Sign-In) -->
+      <button onclick="openProfileModal()" class="flex items-center gap-2 p-1.5 pr-3 rounded-2xl bg-zinc-950/80 hover:bg-white/10 border border-white/10 hover:border-orange-500/40 transition-all shadow-lg group">
+        <div id="nav-avatar-icon" class="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center font-bold text-sm text-black border border-amber-300/40 shadow-[0_0_15px_rgba(255,107,53,0.4)]">
+          🦅
+        </div>
+        <div class="text-left hidden md:block">
+          <div id="nav-user-name" class="text-xs font-bold text-white line-clamp-1">Phoenix Scholar</div>
+          <div id="nav-user-exam" class="text-[9px] font-mono text-orange-400 -mt-0.5">JEE Aspirant ▼</div>
+        </div>
+      </button>
+    </div>
+  </nav>
+
+  <!-- VIEW 1: HERO & DASHBOARD (Default) -->
+  <main id="view-dashboard" class="relative z-10 max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-10">
+    <!-- Welcome Header & Time Greeting -->
+    <div class="p-8 rounded-3xl glass-card relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-6">
+      <div class="space-y-3 text-center lg:text-left z-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-mono">
+          <span>✨</span> Continuous Gap-Filling Engine Active
+        </div>
+        <h1 class="text-3xl lg:text-5xl font-extrabold tracking-tight text-white font-display">
+          Good Evening, <span class="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-200">Scholar.</span>
+        </h1>
+        <p class="text-zinc-400 text-sm max-w-xl leading-relaxed">
+          Phoenix has analyzed your recent response patterns. You're strong in <strong class="text-white">Quadratic Equations (92%)</strong>, with an active misconception identified in <strong class="text-red-400">Complex Numbers (42%)</strong>.
+        </p>
+
+        <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2">
+          <button onclick="playMarvelIntro('mathematics')" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(255,107,53,0.5)] transition-all">
+            🎬 Play Marvel Subject Intro
+          </button>
+          <button onclick="switchView('quiz')" class="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white font-mono text-xs border border-white/10 transition-colors">
+            Start Daily 5-Min Quiz →
+          </button>
+        </div>
+      </div>
+
+      <!-- Phoenix Level Showcase Card -->
+      <div class="w-full lg:w-80 p-5 rounded-2xl bg-zinc-950/80 border border-white/10 backdrop-blur-xl relative z-10 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(255,107,53,0.4)]">
+              🦅
+            </div>
+            <div>
+              <div class="text-xs font-mono text-orange-400 font-bold">LEVEL 4</div>
+              <div class="font-bold text-white text-sm">Solar Blaze</div>
+            </div>
+          </div>
+          <span class="text-xs font-mono text-zinc-500">2,840 / 3,500 XP</span>
+        </div>
+
+        <!-- XP Progress Bar -->
+        <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300 rounded-full" style="width: 81%;"></div>
+        </div>
+
+        <div class="text-[11px] text-zinc-400 flex justify-between font-mono">
+          <span>Current Streak: 7 Days</span>
+          <span class="text-amber-400">+1.5x Multiplier</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 High-Impact Live Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="p-5 rounded-2xl glass-card space-y-1">
+        <div class="text-xs font-mono text-zinc-400">Chapters Mastered</div>
+        <div class="text-2xl lg:text-3xl font-bold font-display text-white">14 <span class="text-xs font-mono text-green-400 font-normal">/ 28</span></div>
+        <div class="text-[10px] text-zinc-500 font-mono">RD Sharma 9-12</div>
+      </div>
+      <div class="p-5 rounded-2xl glass-card space-y-1">
+        <div class="text-xs font-mono text-zinc-400">Problem Accuracy</div>
+        <div class="text-2xl lg:text-3xl font-bold font-display text-amber-300">88.4%</div>
+        <div class="text-[10px] text-zinc-500 font-mono">Top 5% in Batch</div>
+      </div>
+      <div class="p-5 rounded-2xl glass-card space-y-1">
+        <div class="text-xs font-mono text-zinc-400">Knowledge Gaps</div>
+        <div class="text-2xl lg:text-3xl font-bold font-display text-red-400">2 <span class="text-xs font-mono text-zinc-400 font-normal">targeted</span></div>
+        <div class="text-[10px] text-zinc-500 font-mono">Interventions Ready</div>
+      </div>
+      <div class="p-5 rounded-2xl glass-card space-y-1">
+        <div class="text-xs font-mono text-zinc-400">Arena Standing</div>
+        <div class="text-2xl lg:text-3xl font-bold font-display text-orange-400">#24</div>
+        <div class="text-[10px] text-zinc-500 font-mono">Global Hall of Fame</div>
+      </div>
+    </div>
+
+    <!-- Knowledge Gap Targeted Interventions Box -->
+    <div class="p-6 rounded-3xl glass-card space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🧠</span>
+          <h2 class="font-bold text-white text-base md:text-lg">Targeted Gap Fillers (Adaptive Interventions)</h2>
+        </div>
+        <span class="text-[10px] font-mono uppercase bg-red-950/60 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">
+          2 Concepts Require Attention
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Gap 1 -->
+        <div class="p-5 rounded-2xl bg-zinc-950/60 border border-red-500/30 space-y-2">
+          <div class="flex items-center justify-between text-xs font-bold text-red-300">
+            <span>Complex Numbers: Argand Plane & Arguments</span>
+            <span class="font-mono text-red-400">42% Accuracy</span>
+          </div>
+          <p class="text-xs text-zinc-400 leading-relaxed">
+            Misconception identified when determining principal argument θ for numbers with negative real components ($z = -1 + i\sqrt{3}$).
+          </p>
+          <div class="flex items-center justify-between pt-2">
+            <span class="text-[10px] font-mono text-zinc-500">RD Sharma Class 11 • Ch 13</span>
+            <button onclick="switchView('curriculum')" class="text-xs font-bold text-orange-400 hover:text-orange-300">
+              Launch Micro-Review →
+            </button>
+          </div>
+        </div>
+
+        <!-- Gap 2 -->
+        <div class="p-5 rounded-2xl bg-zinc-950/60 border border-red-500/30 space-y-2">
+          <div class="flex items-center justify-between text-xs font-bold text-red-300">
+            <span>Physics: Limiting Static vs Kinetic Friction</span>
+            <span class="font-mono text-red-400">48% Accuracy</span>
+          </div>
+          <p class="text-xs text-zinc-400 leading-relaxed">
+            Confusion between threshold static friction ($\mu_s N$) and actual reaction force on an object when external force is below threshold.
+          </p>
+          <div class="flex items-center justify-between pt-2">
+            <span class="text-[10px] font-mono text-zinc-500">HC Verma Concepts • Ch 6</span>
+            <button onclick="switchView('simulations')" class="text-xs font-bold text-orange-400 hover:text-orange-300">
+              Open Interactive Lab →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subject Pathways Grid (RD Sharma & STEM) -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold text-white text-lg font-display flex items-center gap-2">
+          <span>📚</span> Active Curriculum Disciplines
+        </h2>
+        <span class="text-xs font-mono text-zinc-400">Class 9–12 & JEE Ready</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Math -->
+        <div class="p-6 rounded-2xl glass-card space-y-4 relative overflow-hidden group">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_20px_rgba(255,107,53,0.4)]">
+            ∫
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base">Mathematics</h3>
+            <p class="text-xs text-zinc-400 line-clamp-2 mt-1">
+              RD Sharma Class 9–12 algebra, calculus, matrices, trigonometry & JEE PYQs.
+            </p>
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-[11px] font-mono text-zinc-400">
+              <span>Progress</span>
+              <span class="text-orange-400">14 / 28 Chapters</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div class="h-full bg-orange-500 rounded-full" style="width: 50%;"></div>
+            </div>
+          </div>
+          <button onclick="switchView('curriculum')" class="w-full py-2.5 rounded-xl bg-white/5 hover:bg-orange-500 hover:text-white text-zinc-300 text-xs font-mono font-semibold transition-all">
+            Continue Topic →
+          </button>
+        </div>
+
+        <!-- Physics -->
+        <div class="p-6 rounded-2xl glass-card space-y-4 relative overflow-hidden group">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_20px_rgba(10,132,255,0.4)]">
+            ⚛
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base">Physics</h3>
+            <p class="text-xs text-zinc-400 line-clamp-2 mt-1">
+              HC Verma & NCERT mechanics, oscillations, electrostatics and modern physics.
+            </p>
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-[11px] font-mono text-zinc-400">
+              <span>Progress</span>
+              <span class="text-cyan-400">8 / 20 Chapters</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div class="h-full bg-cyan-500 rounded-full" style="width: 40%;"></div>
+            </div>
+          </div>
+          <button onclick="switchView('simulations')" class="w-full py-2.5 rounded-xl bg-white/5 hover:bg-cyan-500 hover:text-white text-zinc-300 text-xs font-mono font-semibold transition-all">
+            Open Physics Lab →
+          </button>
+        </div>
+
+        <!-- Computer Science -->
+        <div class="p-6 rounded-2xl glass-card space-y-4 relative overflow-hidden group">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-2xl font-black text-white shadow-[0_0_20px_rgba(191,90,242,0.4)]">
+            &lt;/&gt;
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base">Coding & Computer Science</h3>
+            <p class="text-xs text-zinc-400 line-clamp-2 mt-1">
+              Python fundamentals, OOP, sorting algorithms and Tree/Graph data structures.
+            </p>
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-[11px] font-mono text-zinc-400">
+              <span>Progress</span>
+              <span class="text-purple-400">12 / 16 Chapters</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div class="h-full bg-purple-500 rounded-full" style="width: 75%;"></div>
+            </div>
+          </div>
+          <button onclick="switchView('curriculum')" class="w-full py-2.5 rounded-xl bg-white/5 hover:bg-purple-500 hover:text-white text-zinc-300 text-xs font-mono font-semibold transition-all">
+            Practice Algorithms →
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 2: RD SHARMA CURRICULUM & INTERACTIVE LEARNING TOPIC -->
+  <main id="view-curriculum" class="hidden relative z-10 max-w-5xl mx-auto px-4 lg:px-8 py-8 space-y-8">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <span class="text-xs font-mono text-orange-400 uppercase tracking-widest">RD SHARMA CLASS 11 • CHAPTER 8</span>
+        <h1 class="text-2xl md:text-3xl font-bold text-white font-display">Quadratic Equations & Complex Roots</h1>
+      </div>
+      <button onclick="switchView('dashboard')" class="text-xs font-mono text-zinc-400 hover:text-white p-2 rounded-xl bg-white/5">
+        ← Back
+      </button>
+    </div>
+
+    <!-- Theory Card -->
+    <div class="p-6 md:p-8 rounded-3xl glass-card space-y-6">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-mono text-amber-300 bg-amber-950/40 px-3 py-1 rounded-full border border-amber-500/30">
+          Core Theory & Vieta's Theorem
+        </span>
+        <span class="text-xs font-mono text-zinc-400">Estimated: 15 Mins</span>
+      </div>
+
+      <div class="prose prose-invert max-w-none text-zinc-300 text-sm leading-relaxed space-y-4">
+        <p>
+          A quadratic equation is a second-order polynomial in variable $x$:
+        </p>
+        <div class="p-4 rounded-xl bg-orange-950/30 border border-orange-500/30 text-center font-mono text-base text-amber-200">
+          ax² + bx + c = 0, where a ≠ 0
+        </div>
+        <p>
+          The roots are given by the quadratic formula derived via completing the square:
+        </p>
+        <div class="p-4 rounded-xl bg-zinc-900 border border-white/10 text-center font-mono text-base text-white">
+          x = (-b ± √(b² - 4ac)) / 2a
+        </div>
+
+        <h3 class="font-bold text-white text-base pt-2">The Discriminant (D = b² - 4ac):</h3>
+        <ul class="list-disc pl-5 space-y-1.5 text-zinc-400">
+          <li><strong class="text-green-400">D &gt; 0:</strong> Two distinct real roots.</li>
+          <li><strong class="text-amber-400">D = 0:</strong> Exactly one real root (coincident, x = -b/2a).</li>
+          <li><strong class="text-red-400">D &lt; 0:</strong> Two complex conjugate roots.</li>
+        </ul>
+      </div>
+
+      <!-- 3D Flashcards Deck -->
+      <div class="space-y-3 pt-4 border-t border-white/10">
+        <div class="flex justify-between items-center">
+          <h4 class="font-bold text-white text-xs font-mono uppercase tracking-wider">3D Memory Recall Flashcards (Click to Flip)</h4>
+          <span class="text-[10px] font-mono text-zinc-500">Tap card to see answer</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Card 1 -->
+          <div class="flip-box h-36 cursor-pointer" onclick="this.classList.toggle('flipped')">
+            <div class="flip-box-inner relative w-full h-full">
+              <div class="flip-box-front absolute inset-0 p-5 rounded-2xl bg-zinc-950 border border-orange-500/30 flex flex-col justify-between">
+                <span class="text-[10px] font-mono text-orange-400">QUESTION CARD</span>
+                <p class="text-sm font-semibold text-white">What is the sum and product of roots in terms of coefficients?</p>
+                <span class="text-[10px] font-mono text-zinc-500">Click to reveal →</span>
+              </div>
+              <div class="flip-box-back absolute inset-0 p-5 rounded-2xl bg-gradient-to-br from-orange-950 to-zinc-900 border border-amber-500/40 flex flex-col justify-between">
+                <span class="text-[10px] font-mono text-amber-300">VIETA'S FORMULAS</span>
+                <p class="text-sm font-mono text-amber-200">Sum = -b/a <br>Product = c/a</p>
+                <span class="text-[10px] font-mono text-green-400">✓ Concept Verified</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="flip-box h-36 cursor-pointer" onclick="this.classList.toggle('flipped')">
+            <div class="flip-box-inner relative w-full h-full">
+              <div class="flip-box-front absolute inset-0 p-5 rounded-2xl bg-zinc-950 border border-blue-500/30 flex flex-col justify-between">
+                <span class="text-[10px] font-mono text-cyan-400">QUESTION CARD</span>
+                <p class="text-sm font-semibold text-white">When is ax² + bx + c &gt; 0 for ALL real numbers x?</p>
+                <span class="text-[10px] font-mono text-zinc-500">Click to reveal →</span>
+              </div>
+              <div class="flip-box-back absolute inset-0 p-5 rounded-2xl bg-gradient-to-br from-blue-950 to-zinc-900 border border-cyan-500/40 flex flex-col justify-between">
+                <span class="text-[10px] font-mono text-cyan-300">PARABOLA LOCATION</span>
+                <p class="text-sm font-mono text-cyan-200">a &gt; 0 and D &lt; 0 <br>(Opens up, never hits axis)</p>
+                <span class="text-[10px] font-mono text-green-400">✓ Concept Verified</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 3: ADAPTIVE QUIZ WITH INSTANT FEEDBACK -->
+  <main id="view-quiz" class="hidden relative z-10 max-w-3xl mx-auto px-4 py-8 space-y-6">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div class="flex items-center gap-3">
+        <button onclick="switchView('dashboard')" class="text-xs font-mono text-zinc-400 hover:text-white p-2 rounded-xl bg-white/5">✕ Quit</button>
+        <span class="text-sm font-bold text-white font-mono uppercase">Daily Adaptive Assessment</span>
+      </div>
+      <div id="quiz-timer" class="px-4 py-1.5 rounded-full font-mono text-xs font-bold text-amber-400 bg-amber-950/40 border border-amber-500/40">
+        ⏱ 04:45
+      </div>
+    </div>
+
+    <!-- Active Question Card -->
+    <div id="quiz-container" class="p-6 md:p-8 rounded-3xl glass-card space-y-6">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-mono px-3 py-1 rounded-full uppercase bg-orange-950/60 text-orange-400 border border-orange-500/30">
+          JEE Main Level • RD Sharma Class 11
+        </span>
+        <span class="text-xs font-mono text-zinc-400">+30 XP</span>
+      </div>
+
+      <p class="text-base md:text-lg font-medium text-white leading-relaxed">
+        If $\alpha$ and $\beta$ are the roots of $ax^2 + bx + c = 0$, what is the exact value of:
+        <span class="block my-3 p-3 bg-zinc-950 text-center font-mono text-amber-300 rounded-xl border border-white/10">
+          (1 / α²) + (1 / β²)
+        </span>
+      </p>
+
+      <!-- Options -->
+      <div class="space-y-3" id="quiz-options">
+        <button onclick="selectQuizAnswer(0, false)" class="quiz-opt w-full p-4 rounded-2xl bg-zinc-950/80 border border-white/10 hover:border-orange-500/50 text-left text-sm font-medium flex items-center justify-between transition-all">
+          <span>A. (b² + 2ac) / c²</span>
+        </button>
+        <button onclick="selectQuizAnswer(1, true)" class="quiz-opt w-full p-4 rounded-2xl bg-zinc-950/80 border border-white/10 hover:border-orange-500/50 text-left text-sm font-medium flex items-center justify-between transition-all">
+          <span>B. (b² - 2ac) / c²</span>
+        </button>
+        <button onclick="selectQuizAnswer(2, false)" class="quiz-opt w-full p-4 rounded-2xl bg-zinc-950/80 border border-white/10 hover:border-orange-500/50 text-left text-sm font-medium flex items-center justify-between transition-all">
+          <span>C. (b² - 4ac) / a²</span>
+        </button>
+        <button onclick="selectQuizAnswer(3, false)" class="quiz-opt w-full p-4 rounded-2xl bg-zinc-950/80 border border-white/10 hover:border-orange-500/50 text-left text-sm font-medium flex items-center justify-between transition-all">
+          <span>D. (2ac - b²) / a²</span>
+        </button>
+      </div>
+
+      <!-- Explanation Box (Appears after answer) -->
+      <div id="quiz-explanation" class="hidden p-5 rounded-2xl bg-orange-950/30 border border-orange-500/40 text-xs text-zinc-300 space-y-2">
+        <div class="font-bold text-orange-400 flex items-center gap-1.5">
+          <span>💡</span> Step-by-Step Mathematical Derivation:
+        </div>
+        <p>
+          Sum of roots α + β = -b/a and product αβ = c/a.
+          <br>
+          (1/α²) + (1/β²) = (α² + β²) / (αβ)² = [(α + β)² - 2αβ] / (αβ)².
+          <br>
+          Substituting: [(-b/a)² - 2(c/a)] / (c/a)² = <strong>(b² - 2ac) / c²</strong>.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 4: 3D KNOWLEDGE SYNAPSE MAP -->
+  <main id="view-knowledge-map" class="hidden relative z-10 max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-white font-display flex items-center gap-2">
+          <span>🕸️</span> 3D Knowledge Synapse Network
+        </h1>
+        <p class="text-xs text-zinc-400 font-mono">Interactive constellation showing concept dependencies and knowledge gaps.</p>
+      </div>
+      <button onclick="switchView('dashboard')" class="text-xs font-mono text-zinc-400 hover:text-white p-2 rounded-xl bg-white/5">← Dashboard</button>
+    </div>
+
+    <!-- SVG Canvas Synapse Map -->
+    <div class="h-[520px] rounded-3xl bg-zinc-950/90 border border-white/10 relative overflow-hidden shadow-2xl flex items-center justify-center">
+      <svg class="w-full h-full" viewBox="0 0 800 500">
+        <!-- Connecting Synapse Lines -->
+        <line x1="200" y1="120" x2="350" y2="150" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+        <line x1="350" y1="150" x2="520" y2="130" stroke="#ff2d55" stroke-dasharray="4,4" stroke-width="2" class="animate-pulse" />
+        <line x1="350" y1="150" x2="380" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+        <line x1="380" y1="280" x2="550" y2="300" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+        <line x1="200" y1="380" x2="380" y2="380" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+        <line x1="380" y1="380" x2="560" y2="400" stroke="#ff2d55" stroke-dasharray="4,4" stroke-width="2" class="animate-pulse" />
+
+        <!-- Nodes -->
+        <!-- Node 1: Sets -->
+        <g class="cursor-pointer" onclick="showNodeDetails('Sets & Relations', 88, 'Math', 'RD Sharma Ch 1')">
+          <circle cx="200" cy="120" r="18" fill="#12121c" stroke="#ff6b35" stroke-width="2" />
+          <text x="200" y="152" fill="#fff" font-size="10" font-family="monospace" text-anchor="middle">Sets</text>
+        </g>
+
+        <!-- Node 2: Quadratic (Mastered) -->
+        <g class="cursor-pointer" onclick="showNodeDetails('Quadratic Equations', 92, 'Math', 'RD Sharma Ch 8')">
+          <circle cx="350" cy="150" r="22" fill="#12121c" stroke="#30d158" stroke-width="3" />
+          <text x="350" y="186" fill="#30d158" font-size="11" font-family="monospace" text-anchor="middle" font-weight="bold">Quadratics (92%)</text>
+        </g>
+
+        <!-- Node 3: Complex Numbers (GAP) -->
+        <g class="cursor-pointer" onclick="showNodeDetails('Complex Numbers', 42, 'Math (Knowledge Gap)', 'RD Sharma Ch 13')">
+          <circle cx="520" cy="130" r="28" fill="none" stroke="#ff2d55" stroke-width="1.5" class="animate-ping" opacity="0.5" />
+          <circle cx="520" cy="130" r="20" fill="#12121c" stroke="#ff2d55" stroke-width="3" />
+          <text x="520" y="166" fill="#ff2d55" font-size="11" font-family="monospace" text-anchor="middle" font-weight="bold">Complex (GAP)</text>
+        </g>
+
+        <!-- Node 4: Limits -->
+        <g class="cursor-pointer" onclick="showNodeDetails('Limits & Continuity', 76, 'Calculus', 'RD Sharma Ch 29')">
+          <circle cx="380" cy="280" r="18" fill="#12121c" stroke="#ffb347" stroke-width="2" />
+          <text x="380" y="312" fill="#fff" font-size="10" font-family="monospace" text-anchor="middle">Limits</text>
+        </g>
+
+        <!-- Node 5: Derivatives -->
+        <g class="cursor-pointer" onclick="showNodeDetails('Derivatives', 68, 'Calculus', 'RD Sharma Ch 30')">
+          <circle cx="550" cy="300" r="18" fill="#12121c" stroke="#ffb347" stroke-width="2" />
+          <text x="550" y="332" fill="#fff" font-size="10" font-family="monospace" text-anchor="middle">Derivatives</text>
+        </g>
+
+        <!-- Physics Node 1: Kinematics -->
+        <g class="cursor-pointer" onclick="showNodeDetails('Kinematics', 90, 'Physics', 'HC Verma Ch 3')">
+          <circle cx="200" cy="380" r="18" fill="#12121c" stroke="#0a84ff" stroke-width="2" />
+          <text x="200" y="412" fill="#fff" font-size="10" font-family="monospace" text-anchor="middle">Kinematics</text>
+        </g>
+
+        <!-- Physics Node 2: Friction (GAP) -->
+        <g class="cursor-pointer" onclick="showNodeDetails('Laws of Motion & Friction', 48, 'Physics (Knowledge Gap)', 'HC Verma Ch 6')">
+          <circle cx="560" cy="400" r="28" fill="none" stroke="#ff2d55" stroke-width="1.5" class="animate-ping" opacity="0.5" />
+          <circle cx="560" cy="400" r="20" fill="#12121c" stroke="#ff2d55" stroke-width="3" />
+          <text x="560" y="434" fill="#ff2d55" font-size="11" font-family="monospace" text-anchor="middle" font-weight="bold">Friction (GAP)</text>
+        </g>
+      </svg>
+
+      <!-- Node Details Float Card -->
+      <div id="node-inspector" class="absolute bottom-6 right-6 p-5 rounded-2xl glass-card w-72 space-y-3">
+        <div class="text-[10px] font-mono uppercase text-orange-400">Selected Synapse</div>
+        <h4 id="node-name" class="font-bold text-white text-sm">Complex Numbers</h4>
+        <div class="flex justify-between text-xs font-mono text-zinc-400">
+          <span>Mastery</span>
+          <span id="node-score" class="text-red-400 font-bold">42% (Knowledge Gap)</span>
+        </div>
+        <button onclick="switchView('curriculum')" class="w-full py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-mono text-xs font-semibold">
+          Remediate with Phoenix →
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 5: TRYHACKME STYLE PHYSICS LAB (Simple Harmonic Motion) -->
+  <main id="view-simulations" class="hidden relative z-10 max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-white font-display flex items-center gap-2">
+          <span>⚛️</span> Interactive Physics Lab: Ideal Pendulum Simulation
+        </h1>
+        <p class="text-xs text-zinc-400 font-mono">Live numerical verification of T = 2π√(L/g)</p>
+      </div>
+      <button onclick="switchView('dashboard')" class="text-xs font-mono text-zinc-400 hover:text-white p-2 rounded-xl bg-white/5">← Dashboard</button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Live Pendulum Canvas -->
+      <div class="lg:col-span-2 h-[420px] rounded-3xl bg-zinc-950 border border-white/10 relative overflow-hidden flex items-center justify-center">
+        <canvas id="sim-canvas" width="600" height="420" class="w-full h-full"></canvas>
+        <div class="absolute top-4 left-4 p-3 rounded-xl bg-black/60 border border-white/10 font-mono text-xs space-y-1">
+          <div>Period (T): <strong id="sim-period-display" class="text-amber-400">2.84 s</strong></div>
+          <div>Freq (f): <strong id="sim-freq-display" class="text-cyan-400">0.35 Hz</strong></div>
+        </div>
+      </div>
+
+      <!-- Controls Panel -->
+      <div class="p-6 rounded-3xl glass-card space-y-6">
+        <h3 class="font-bold text-white text-sm font-mono uppercase tracking-wider border-b border-white/10 pb-2">Experimental Sliders</h3>
+
+        <!-- Length Slider -->
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-zinc-400">Length (L)</span>
+            <span id="slider-length-val" class="text-orange-400 font-bold">2.0 m</span>
+          </div>
+          <input id="slider-length" type="range" min="0.5" max="3.5" step="0.1" value="2.0" class="w-full accent-orange-500 cursor-pointer">
+        </div>
+
+        <!-- Gravity Slider -->
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-zinc-400">Gravity (g)</span>
+            <span id="slider-gravity-val" class="text-cyan-400 font-bold">9.8 m/s²</span>
+          </div>
+          <input id="slider-gravity" type="range" min="1.6" max="25" step="0.2" value="9.8" class="w-full accent-cyan-500 cursor-pointer">
+        </div>
+
+        <div class="p-4 rounded-xl bg-zinc-900 border border-white/10 font-mono text-[11px] text-zinc-400 space-y-1">
+          <div class="text-white font-bold">Governing Formula:</div>
+          <div>T = 2π √(L/g)</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 6: CONTESTS ARENA & LEADERBOARD -->
+  <main id="view-contest" class="hidden relative z-10 max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-white font-display flex items-center gap-2">
+          <span>🏆</span> Phoenix Arena Contests & Global Standing
+        </h1>
+        <p class="text-xs text-zinc-400 font-mono">Compete in live timed rounds against aspirants nationwide.</p>
+      </div>
+      <button onclick="switchView('dashboard')" class="text-xs font-mono text-zinc-400 hover:text-white p-2 rounded-xl bg-white/5">← Dashboard</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Live Contest -->
+      <div class="p-6 rounded-3xl glass-card space-y-4">
+        <span class="px-2.5 py-1 rounded-full text-[10px] font-mono uppercase bg-red-950/80 border border-red-500/40 text-red-400 animate-pulse">
+          ● LIVE NOW
+        </span>
+        <h3 class="text-lg font-bold text-white">Grand Calculus & Algebra Arena</h3>
+        <p class="text-xs text-zinc-400">25 Questions • 45 Mins • RD Sharma Class 11-12 & JEE PYQs</p>
+        <div class="flex justify-between items-center pt-2">
+          <span class="text-xs font-mono text-amber-400 font-bold">+1,000 XP Grand Prize</span>
+          <button onclick="switchView('quiz')" class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-mono text-xs font-bold">
+            Enter Contest →
+          </button>
+        </div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="p-6 rounded-3xl glass-card space-y-3">
+        <h4 class="font-bold text-white text-sm font-mono uppercase border-b border-white/10 pb-2">Global Hall of Fame</h4>
+        <div class="space-y-2 text-xs font-mono">
+          <div class="flex justify-between p-2 rounded-lg bg-white/5">
+            <span class="text-amber-400 font-bold">#1 Aarav S. (🔥 42d)</span>
+            <span class="text-white">14,500 XP</span>
+          </div>
+          <div class="flex justify-between p-2 rounded-lg bg-white/5">
+            <span class="text-zinc-300 font-bold">#2 Diya P. (🔥 35d)</span>
+            <span class="text-white">13,920 XP</span>
+          </div>
+          <div class="flex justify-between p-2 rounded-lg bg-white/5">
+            <span class="text-amber-600 font-bold">#3 Rohan V. (🔥 28d)</span>
+            <span class="text-white">12,840 XP</span>
+          </div>
+          <div class="flex justify-between p-2 rounded-lg bg-orange-950/40 border border-orange-500/40">
+            <span class="text-orange-400 font-bold">#24 YOU (🔥 7d)</span>
+            <span class="text-amber-300">2,840 XP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 7: LEARNER PROFILE & MULTI-USER PREFERENCES -->
+  <main id="view-profile" class="hidden relative z-10 max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-white font-display flex items-center gap-2">
+          <span>👤</span> Learner Profile & Academic Identity
+        </h1>
+        <p class="text-xs text-zinc-400 font-mono">Personalized multi-user profile, curriculum preferences, and study targets.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openProfileModal()" class="px-3.5 py-1.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/40 text-orange-400 font-mono text-xs font-bold transition-all">
+          🔄 Switch Profile
+        </button>
+        <button onclick="switchView('dashboard')" class="text-xs font-mono text-zinc-400 hover:text-white p-2 rounded-xl bg-white/5">← Dashboard</button>
+      </div>
+    </div>
+
+    <!-- Active Profile Banner -->
+    <div class="p-6 md:p-8 rounded-3xl glass-card flex flex-col md:flex-row items-center md:items-start gap-6">
+      <div class="relative">
+        <div id="profile-view-avatar" class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center text-5xl shadow-[0_0_40px_rgba(255,107,53,0.5)] border border-amber-300/40">
+          🦅
+        </div>
+        <div id="profile-view-level-badge" class="absolute -bottom-2 -right-2 px-2.5 py-0.5 rounded-full bg-zinc-950 border border-orange-500/50 text-[10px] font-mono text-orange-400 font-bold">
+          LVL 4
+        </div>
+      </div>
+
+      <div class="flex-1 text-center md:text-left space-y-2">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+          <h2 id="profile-view-name" class="text-2xl font-bold text-white font-display">Phoenix Scholar</h2>
+          <span id="profile-view-exam-badge" class="text-xs font-mono text-amber-300 bg-amber-950/40 px-3 py-1 rounded-full border border-amber-500/30">
+            JEE Main & Advanced
+          </span>
+        </div>
+        <p id="profile-view-email" class="text-xs text-zinc-400 font-mono">scholar@phoenixlearn.app</p>
+
+        <div class="flex flex-wrap justify-center md:justify-start gap-4 pt-3">
+          <div class="flex items-center gap-1.5 text-xs font-mono">
+            <span class="text-orange-400">🔥</span>
+            <strong id="profile-view-streak" class="text-white">7 Days</strong> Streak
+          </div>
+          <div class="flex items-center gap-1.5 text-xs font-mono">
+            <span class="text-amber-400">⚡</span>
+            <strong id="profile-view-xp" class="text-white">2,840</strong> Total XP
+          </div>
+          <div class="flex items-center gap-1.5 text-xs font-mono">
+            <span class="text-cyan-400">🎯</span>
+            <strong id="profile-view-accuracy" class="text-white">88%</strong> Avg Mastery
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Profile Form (Saves directly to SQLite Backend) -->
+    <div class="p-6 md:p-8 rounded-3xl glass-card space-y-6">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="font-bold text-white text-base">Academic Preferences & Target Exam</h3>
+        <span class="text-[10px] font-mono text-zinc-500">Auto-saved to Phoenix Database</span>
+      </div>
+
+      <form id="profile-edit-form" onsubmit="handleSaveProfileUpdates(event)" class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Full Name -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-mono text-zinc-400">Full Name</label>
+            <input id="input-profile-name" type="text" value="Phoenix Scholar" class="w-full px-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500 font-medium">
+          </div>
+
+          <!-- Phone Number -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-mono text-zinc-400">Phone Number (Optional)</label>
+            <input id="input-profile-phone" type="tel" placeholder="+91 98765 43210" class="w-full px-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500 font-medium">
+          </div>
+
+          <!-- Class Level -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-mono text-zinc-400">Academic Standard / Class</label>
+            <select id="input-profile-class" class="w-full px-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500 font-medium">
+              <option value="9">Class 9th (Foundation)</option>
+              <option value="10">Class 10th (Board Prep)</option>
+              <option value="11" selected>Class 11th (Core JEE/NEET)</option>
+              <option value="12">Class 12th & Dropper</option>
+            </select>
+          </div>
+
+          <!-- Target Exam -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-mono text-zinc-400">Target Competitive Exam</label>
+            <select id="input-profile-exam" class="w-full px-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500 font-medium">
+              <option value="JEE Main & Advanced" selected>JEE Main & Advanced</option>
+              <option value="NEET Medical">NEET Medical Exam</option>
+              <option value="CBSE / ICSE Boards">CBSE / ICSE Board Mastery</option>
+              <option value="Coding & Olympiad">Coding & Computer Science Olympiad</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Enrolled Subjects Multi-Select Checkboxes -->
+        <div class="space-y-2 pt-2">
+          <label class="text-xs font-mono text-zinc-400">Syllabus Subjects to Include in Practice & Quizzes</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <label class="flex items-center gap-2 p-3 rounded-xl bg-zinc-950/80 border border-white/10 text-xs cursor-pointer hover:border-orange-500/40">
+              <input type="checkbox" id="subj-math" checked class="accent-orange-500">
+              <span>Mathematics (RD Sharma)</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl bg-zinc-950/80 border border-white/10 text-xs cursor-pointer hover:border-blue-500/40">
+              <input type="checkbox" id="subj-physics" checked class="accent-cyan-500">
+              <span>Physics (HC Verma)</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl bg-zinc-950/80 border border-white/10 text-xs cursor-pointer hover:border-green-500/40">
+              <input type="checkbox" id="subj-chemistry" checked class="accent-green-500">
+              <span>Chemistry (NCERT)</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl bg-zinc-950/80 border border-white/10 text-xs cursor-pointer hover:border-purple-500/40">
+              <input type="checkbox" id="subj-cs" checked class="accent-purple-500">
+              <span>Coding / CS</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Daily Goal Slider -->
+        <div class="space-y-2 pt-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-zinc-400">Daily Study Target</span>
+            <span id="goal-minutes-display" class="text-orange-400 font-bold">45 Minutes / Day</span>
+          </div>
+          <input id="input-profile-goal" type="range" min="15" max="120" step="15" value="45" oninput="document.getElementById('goal-minutes-display').innerText = `${this.value} Minutes / Day`" class="w-full accent-orange-500 cursor-pointer">
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-white/10">
+          <span id="profile-save-status" class="text-xs font-mono text-green-400 hidden">✓ Preferences saved to database</span>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(255,107,53,0.5)] transition-all ml-auto">
+            Save Profile Updates
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <!-- MULTI-USER PROFILE SWITCHER & GOOGLE LOGIN MODAL -->
+  <div id="modal-profile-switcher" class="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 hidden select-none">
+    <div class="w-full max-w-lg rounded-3xl bg-zinc-950 border border-white/15 p-6 md:p-8 space-y-6 shadow-2xl relative">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">👥</span>
+          <div>
+            <h3 class="text-lg font-bold text-white font-display">Student Profiles & Auth</h3>
+            <p class="text-xs text-zinc-400 font-mono">Switch profiles or sign in with Google</p>
+          </div>
+        </div>
+        <button onclick="closeProfileModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center text-sm">✕</button>
+      </div>
+
+      <!-- Google Sign-In Button -->
+      <div class="space-y-3">
+        <button onclick="handleGoogleSignIn()" class="w-full py-3 px-4 rounded-2xl bg-white hover:bg-zinc-100 text-zinc-900 font-semibold text-xs flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Continue with Google Account</span>
+        </button>
+
+        <div class="flex items-center gap-3">
+          <div class="h-px flex-1 bg-white/10"></div>
+          <span class="text-[10px] font-mono text-zinc-500 uppercase">OR SWITCH STORED PROFILE</span>
+          <div class="h-px flex-1 bg-white/10"></div>
+        </div>
+      </div>
+
+      <!-- Stored Profiles List (Loaded from SQLite) -->
+      <div class="space-y-2">
+        <div class="text-[11px] font-mono text-zinc-400">Available Profiles on this Device:</div>
+        <div id="profiles-list-container" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <!-- Dynamically populated from /api/auth/profiles -->
+        </div>
+      </div>
+
+      <!-- Add New Profile Accordion Toggle -->
+      <div class="pt-2 border-t border-white/10">
+        <button onclick="toggleNewProfileForm()" class="text-xs font-mono text-orange-400 hover:text-orange-300 flex items-center justify-between w-full py-1">
+          <span>+ Add New Student Profile</span>
+          <span id="new-profile-toggle-icon">▼</span>
+        </button>
+
+        <form id="new-profile-form" onsubmit="handleCreateNewProfile(event)" class="hidden space-y-3 pt-3">
+          <input id="new-user-name" type="text" placeholder="Student Full Name" required class="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500">
+          <input id="new-user-email" type="email" placeholder="Student Email Address" required class="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500">
+          <div class="grid grid-cols-2 gap-2">
+            <select id="new-user-class" class="px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500">
+              <option value="9">Class 9th</option>
+              <option value="10">Class 10th</option>
+              <option value="11" selected>Class 11th</option>
+              <option value="12">Class 12th</option>
+            </select>
+            <select id="new-user-exam" class="px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500">
+              <option value="JEE Main & Advanced">JEE Main & Adv</option>
+              <option value="NEET Medical">NEET Medical</option>
+              <option value="CBSE Boards">CBSE Boards</option>
+              <option value="Coding Olympiad">Coding Olympiad</option>
+            </select>
+          </div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-mono text-xs font-bold transition-all shadow-[0_0_15px_rgba(255,107,53,0.4)]">
+            Create & Switch Profile 🔥
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHOENIX SIDE CHATTER COMPANION (Always on screen) -->
+  <div id="phoenix-companion" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 select-none">
+    <!-- Speech Bubble -->
+    <div id="phoenix-bubble" class="max-w-xs p-4 rounded-2xl glass-card border border-orange-500/40 shadow-2xl space-y-2 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] font-mono text-orange-400 font-bold flex items-center gap-1">
+          <span>🔥</span> PHOENIX MENTOR
+        </span>
+        <button onclick="togglePhoenixBubble()" class="text-zinc-500 hover:text-white text-xs">✕</button>
+      </div>
+      <p id="phoenix-speech" class="text-xs text-zinc-200 leading-relaxed font-medium">
+        "Consistency beats intensity every time. Keep this 7-day flame alive!"
+      </p>
+    </div>
+
+    <!-- Companion Trigger Button -->
+    <button onclick="togglePhoenixBubble()" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center text-3xl shadow-[0_0_35px_rgba(255,107,53,0.7)] hover:scale-105 active:scale-95 transition-all phoenix-aura border border-amber-300/40">
+      🦅
+    </button>
+  </div>
+
+  <!-- AI COPILOT SLIDE-IN PANEL (Doubt Solving with Photo Sharing) -->
+  <div id="copilot-drawer" class="fixed top-0 right-0 bottom-0 w-full sm:w-96 glass z-[9999] border-l border-white/10 p-6 flex flex-col justify-between transform translate-x-full transition-transform duration-300 shadow-2xl">
+    <div class="space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🤖</span>
+          <h3 class="font-bold text-white text-sm font-display">Phoenix AI Copilot</h3>
+        </div>
+        <button onclick="toggleCopilot()" class="text-zinc-400 hover:text-white text-sm p-1">✕</button>
+      </div>
+
+      <!-- Chat Thread -->
+      <div id="copilot-messages" class="h-[460px] overflow-y-auto space-y-3 pr-2 text-xs font-sans">
+        <div class="p-3 rounded-2xl bg-white/5 border border-white/10 text-zinc-300">
+          Hello! I am your 24/7 Academic Copilot. Ask any question in Math (RD Sharma), Physics, Chemistry, or Coding. You can also upload a photo of your textbook problem!
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area with Photo Upload -->
+    <div class="space-y-2 pt-4 border-t border-white/10">
+      <div id="image-preview" class="hidden relative h-16 w-16 rounded-lg overflow-hidden border border-orange-500">
+        <img id="preview-img" src="" class="w-full h-full object-cover">
+        <button onclick="clearImageUpload()" class="absolute top-0 right-0 bg-red-600 text-[10px] w-4 h-4 flex items-center justify-center text-white">✕</button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <label class="cursor-pointer p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/10">
+          📷
+          <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+        </label>
+        <input id="copilot-input" type="text" placeholder="Ask a doubt or formula..." class="flex-1 px-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white focus:outline-none focus:border-orange-500">
+        <button onclick="sendCopilotMessage()" class="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING AI COPILOT FAB -->
+  <button onclick="toggleCopilot()" class="fixed bottom-6 left-6 z-40 px-4 py-2.5 rounded-2xl bg-zinc-950/90 border border-orange-500/40 text-white text-xs font-mono font-bold shadow-2xl flex items-center gap-2 hover:border-orange-500 transition-all">
+    <span class="text-orange-400">🤖</span> Ask AI Copilot (Photo Doubt)
+  </button>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Custom Cursor Tracker
+    const dot = document.getElementById('cursor-dot');
+    const ring = document.getElementById('cursor-ring');
+    let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      dot.style.left = `${mouseX}px`;
+      dot.style.top = `${mouseY}px`;
+    });
+
+    function renderCursor() {
+      ringX += (mouseX - ringX) * 0.15;
+      ringY += (mouseY - ringY) * 0.15;
+      ring.style.left = `${ringX}px`;
+      ring.style.top = `${ringY}px`;
+      requestAnimationFrame(renderCursor);
+    }
+    renderCursor();
+
+    // Ambient Particle Simulation
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      radius: Math.random() * 2 + 1,
+      speedY: Math.random() * 0.8 + 0.2,
+      opacity: Math.random() * 0.6 + 0.2
+    }));
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ff6b35';
+      particles.forEach((p) => {
+        p.y -= p.speedY;
+        if (p.y < 0) p.y = canvas.height;
+        ctx.globalAlpha = p.opacity;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // View Switcher
+    function switchView(viewId) {
+      const views = ['dashboard', 'curriculum', 'quiz', 'knowledge-map', 'simulations', 'contest', 'profile'];
+      views.forEach((v) => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.add('hidden');
+      });
+      const target = document.getElementById(`view-${viewId}`);
+      if (target) target.classList.remove('hidden');
+
+      // Update Nav Buttons
+      document.querySelectorAll('.nav-btn').forEach((btn) => {
+        if (btn.getAttribute('data-view') === viewId) {
+          btn.classList.add('text-white', 'font-semibold');
+          btn.classList.remove('text-zinc-400');
+        } else {
+          btn.classList.remove('text-white', 'font-semibold');
+          btn.classList.add('text-zinc-400');
+        }
+      });
+
+      if (viewId === 'simulations') initSimulation();
+    }
+
+    // Marvel Intro Sequence
+    function playMarvelIntro(subject) {
+      const intro = document.getElementById('marvel-intro');
+      intro.classList.remove('hidden');
+      setTimeout(() => {
+        intro.classList.add('opacity-0');
+        setTimeout(() => {
+          intro.classList.remove('opacity-0');
+          intro.classList.add('hidden');
+        }, 500);
+      }, 3500);
+    }
+    function closeMarvelIntro() {
+      const intro = document.getElementById('marvel-intro');
+      intro.classList.add('hidden');
+    }
+
+    // Adaptive Quiz Logic
+    function selectQuizAnswer(index, isCorrect) {
+      const opts = document.querySelectorAll('.quiz-opt');
+      opts.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === 1) { // B is correct
+          btn.classList.add('border-green-500', 'bg-green-950/40', 'text-green-300');
+        } else if (idx === index && !isCorrect) {
+          btn.classList.add('border-red-500', 'bg-red-950/40', 'text-red-300');
+        }
+      });
+      document.getElementById('quiz-explanation').classList.remove('hidden');
+    }
+
+    // Physics Simulation (Pendulum)
+    let simLength = 2.0;
+    let simGravity = 9.8;
+    let simAngle = 0.5;
+    let simTime = 0;
+
+    function initSimulation() {
+      const simCanvas = document.getElementById('sim-canvas');
+      const sCtx = simCanvas.getContext('2d');
+      const lengthSlider = document.getElementById('slider-length');
+      const gravitySlider = document.getElementById('slider-gravity');
+
+      lengthSlider.oninput = (e) => {
+        simLength = parseFloat(e.target.value);
+        document.getElementById('slider-length-val').innerText = `${simLength.toFixed(1)} m`;
+        updatePeriod();
+      };
+      gravitySlider.oninput = (e) => {
+        simGravity = parseFloat(e.target.value);
+        document.getElementById('slider-gravity-val').innerText = `${simGravity.toFixed(1)} m/s²`;
+        updatePeriod();
+      };
+
+      function updatePeriod() {
+        const T = 2 * Math.PI * Math.sqrt(simLength / simGravity);
+        document.getElementById('sim-period-display').innerText = `${T.toFixed(2)} s`;
+        document.getElementById('sim-freq-display').innerText = `${(1 / T).toFixed(2)} Hz`;
+      }
+      updatePeriod();
+
+      function drawPendulum() {
+        simTime += 0.03;
+        const omega = Math.sqrt(simGravity / simLength);
+        const theta = 0.4 * Math.cos(omega * simTime);
+
+        sCtx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+        const pivotX = simCanvas.width / 2;
+        const pivotY = 40;
+        const pxLen = simLength * 80;
+        const bobX = pivotX + pxLen * Math.sin(theta);
+        const bobY = pivotY + pxLen * Math.cos(theta);
+
+        // Ceiling
+        sCtx.fillStyle = '#52525b';
+        sCtx.fillRect(pivotX - 50, pivotY - 8, 100, 8);
+
+        // String
+        sCtx.beginPath();
+        sCtx.moveTo(pivotX, pivotY);
+        sCtx.lineTo(bobX, bobY);
+        sCtx.strokeStyle = '#ff6b35';
+        sCtx.lineWidth = 3;
+        sCtx.stroke();
+
+        // Bob
+        sCtx.beginPath();
+        sCtx.arc(bobX, bobY, 18, 0, Math.PI * 2);
+        sCtx.fillStyle = '#ff9500';
+        sCtx.shadowColor = '#ff6b35';
+        sCtx.shadowBlur = 20;
+        sCtx.fill();
+        sCtx.shadowBlur = 0;
+
+        requestAnimationFrame(drawPendulum);
+      }
+      drawPendulum();
+    }
+
+    // Knowledge Map Inspector
+    function showNodeDetails(name, score, type, source) {
+      document.getElementById('node-name').innerText = name;
+      document.getElementById('node-score').innerText = `${score}% (${source})`;
+    }
+
+    // Phoenix Side Companion Toggle
+    function togglePhoenixBubble() {
+      const bubble = document.getElementById('phoenix-bubble');
+      bubble.classList.toggle('hidden');
+    }
+
+    // AI Copilot Toggle & Chat
+    function toggleCopilot() {
+      const drawer = document.getElementById('copilot-drawer');
+      drawer.classList.toggle('translate-x-full');
+    }
+
+    // Backend REST API Integration
+    let currentImageBase64 = null;
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          currentImageBase64 = evt.target.result;
+          document.getElementById('preview-img').src = currentImageBase64;
+          document.getElementById('image-preview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    function clearImageUpload() {
+      currentImageBase64 = null;
+      document.getElementById('image-preview').classList.add('hidden');
+    }
+
+    async function sendCopilotMessage() {
+      const input = document.getElementById('copilot-input');
+      const text = input.value.trim();
+      if (!text && !currentImageBase64) return;
+
+      const container = document.getElementById('copilot-messages');
+      const userBubble = document.createElement('div');
+      userBubble.className = 'p-3 rounded-2xl bg-orange-950/60 border border-orange-500/40 text-orange-200 self-end ml-4 space-y-2';
+      
+      let userHtml = '';
+      if (currentImageBase64) {
+        userHtml += `<img src="${currentImageBase64}" class="w-32 h-24 object-cover rounded-lg border border-orange-500/50 mb-1">`;
+      }
+      userHtml += `<div>${text || 'Please analyze and solve this problem from my textbook.'}</div>`;
+      userBubble.innerHTML = userHtml;
+      container.appendChild(userBubble);
+
+      const capturedImg = currentImageBase64;
+      input.value = '';
+      clearImageUpload();
+      container.scrollTop = container.scrollHeight;
+
+      // Thinking indicator
+      const thinkingBubble = document.createElement('div');
+      thinkingBubble.className = 'p-3 rounded-2xl bg-white/5 border border-white/10 text-zinc-400 italic flex items-center gap-2';
+      thinkingBubble.innerHTML = `<span class="animate-spin text-orange-400">🔥</span> Phoenix Copilot analyzing with Gemini 3.8 Flash...`;
+      container.appendChild(thinkingBubble);
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const response = await fetch('/api/copilot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text || 'Please analyze and solve this problem from my textbook.',
+            image_base64: capturedImg,
+            context: 'RD Sharma Mathematics Class 11-12 & Physics HC Verma'
+          })
+        });
+        const data = await response.json();
+        thinkingBubble.remove();
+
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'p-3.5 rounded-2xl bg-zinc-900/90 border border-white/10 text-zinc-200 space-y-2';
+        
+        // Convert simple markdown formatting
+        let formatted = data.reply
+          .replace(/\n\n/g, '<br><br>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/### (.*?)(<br>|$)/g, '<div class="font-bold text-orange-400 text-sm mt-1">$1</div>');
+
+        aiBubble.innerHTML = `<div class="flex items-center gap-1.5 text-[10px] font-mono text-orange-400 font-bold"><span>🦅</span> GEMINI 3.8 FLASH</div><div>${formatted}</div>`;
+        container.appendChild(aiBubble);
+      } catch (err) {
+        thinkingBubble.remove();
+        const errBubble = document.createElement('div');
+        errBubble.className = 'p-3 rounded-2xl bg-zinc-900 border border-white/10 text-zinc-300';
+        errBubble.innerHTML = `<strong>Phoenix Copilot:</strong> For quadratic equation $ax^2 + bx + c = 0$, remember that if $b^2 - 4ac < 0$, roots are conjugate complex numbers. Keep practicing RD Sharma Chapter 8!`;
+        container.appendChild(errBubble);
+      }
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Connect Quiz Answer to Adaptive Engine Backend
+    async function selectQuizAnswer(index, isCorrect) {
+      const opts = document.querySelectorAll('.quiz-opt');
+      opts.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === 1) { // B is correct
+          btn.classList.add('border-green-500', 'bg-green-950/40', 'text-green-300');
+        } else if (idx === index && !isCorrect) {
+          btn.classList.add('border-red-500', 'bg-red-950/40', 'text-red-300');
+        }
+      });
+      document.getElementById('quiz-explanation').classList.remove('hidden');
+
+      // Submit to backend adaptive engine
+      try {
+        await fetch('/api/quiz/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: activeUserId,
+            topic_id: 'math-t9',
+            score_percent: isCorrect ? 100.0 : 0.0,
+            time_spent_seconds: 45,
+            responses: [{ question_id: 'math-q2', selected: index, correct: 1 }]
+          })
+        });
+        loadUserProfile(activeUserId);
+      } catch (e) {
+        console.log("Quiz synced locally");
+      }
+    }
+
+    // ─── MULTI-USER PROFILE & GOOGLE AUTH LOGIC ─────────────────────────────
+    let activeUserId = localStorage.getItem('phoenix_active_user_id') || 'user-demo-1';
+    let currentUserData = null;
+
+    // Load User Profile on Startup & Switch
+    async function loadUserProfile(userId = activeUserId) {
+      try {
+        const res = await fetch(`/api/user?user_id=${userId}`);
+        const data = await res.json();
+        if (data.user) {
+          currentUserData = data.user;
+          activeUserId = data.user.id;
+          localStorage.setItem('phoenix_active_user_id', activeUserId);
+
+          // Update Top Nav
+          const navName = document.getElementById('nav-user-name');
+          if (navName) navName.innerText = data.user.name;
+          const navExam = document.getElementById('nav-user-exam');
+          if (navExam) navExam.innerText = `${data.user.target_exam || 'JEE'} ▼`;
+          const navStreak = document.getElementById('nav-streak-text');
+          if (navStreak) navStreak.innerText = `${data.user.streak} DAYS`;
+          const navXp = document.getElementById('nav-xp-text');
+          if (navXp) navXp.innerText = `${data.user.total_xp} XP`;
+          const navAvatar = document.getElementById('nav-avatar-icon');
+          if (navAvatar) navAvatar.innerText = data.user.avatar || '🦅';
+
+          // Update Profile View Banner & Inputs
+          const pName = document.getElementById('profile-view-name');
+          if (pName) {
+            pName.innerText = data.user.name;
+            document.getElementById('profile-view-email').innerText = data.user.email;
+            document.getElementById('profile-view-exam-badge').innerText = data.user.target_exam || 'JEE Main & Advanced';
+            document.getElementById('profile-view-streak').innerText = `${data.user.streak} Days`;
+            document.getElementById('profile-view-xp').innerText = `${data.user.total_xp}`;
+            document.getElementById('profile-view-level-badge').innerText = `LVL ${data.user.level}`;
+            document.getElementById('profile-view-avatar').innerText = data.user.avatar || '🦅';
+
+            // Form Fields
+            document.getElementById('input-profile-name').value = data.user.name;
+            document.getElementById('input-profile-phone').value = data.user.phone || '';
+            document.getElementById('input-profile-class').value = data.user.class_level || 11;
+            document.getElementById('input-profile-exam').value = data.user.target_exam || 'JEE Main & Advanced';
+            document.getElementById('input-profile-goal').value = data.user.daily_goal_minutes || 45;
+            document.getElementById('goal-minutes-display').innerText = `${data.user.daily_goal_minutes || 45} Minutes / Day`;
+          }
+        }
+      } catch (e) {
+        console.log("Using default profile state:", e);
+      }
+    }
+
+    // Modal Profile Switcher Controls
+    function openProfileModal() {
+      fetchProfilesList();
+      document.getElementById('modal-profile-switcher').classList.remove('hidden');
+    }
+    function closeProfileModal() {
+      document.getElementById('modal-profile-switcher').classList.add('hidden');
+    }
+    function toggleNewProfileForm() {
+      const f = document.getElementById('new-profile-form');
+      const icon = document.getElementById('new-profile-toggle-icon');
+      f.classList.toggle('hidden');
+      icon.innerText = f.classList.contains('hidden') ? '▼' : '▲';
+    }
+
+    // Fetch and Render Profiles from SQLite
+    async function fetchProfilesList() {
+      const container = document.getElementById('profiles-list-container');
+      try {
+        const res = await fetch('/api/auth/profiles');
+        const data = await res.json();
+        container.innerHTML = '';
+
+        if (data.profiles && data.profiles.length > 0) {
+          data.profiles.forEach((p) => {
+            const isCurrent = p.id === activeUserId;
+            const item = document.createElement('div');
+            item.className = `p-3 rounded-2xl border flex items-center justify-between transition-all ${
+              isCurrent
+                ? 'bg-orange-950/40 border-orange-500/60 ring-1 ring-orange-500/30'
+                : 'bg-zinc-900/60 border-white/10 hover:border-white/30'
+            }`;
+
+            item.innerHTML = `
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl">
+                  ${p.avatar || '🦅'}
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                    ${p.name}
+                    ${isCurrent ? '<span class="text-[9px] bg-orange-500 text-white px-1.5 py-0.2 rounded font-mono">ACTIVE</span>' : ''}
+                  </div>
+                  <div class="text-[10px] font-mono text-zinc-400">
+                    Class ${p.class_level} • ${p.target_exam || 'JEE'} • 🔥 ${p.streak}d • ⚡ ${p.total_xp} XP
+                  </div>
+                </div>
+              </div>
+              <div>
+                ${
+                  isCurrent
+                    ? '<span class="text-xs text-orange-400 font-mono font-bold">✓ Active</span>'
+                    : `<button onclick="switchActiveProfile('${p.id}')" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-orange-500 hover:text-white text-zinc-300 font-mono text-xs font-semibold transition-all">Switch</button>`
+                }
+              </div>
+            `;
+            container.appendChild(item);
+          });
+        }
+      } catch (e) {
+        container.innerHTML = '<div class="text-xs text-zinc-500">Failed to load profiles</div>';
+      }
+    }
+
+    // Switch Profile Action
+    async function switchActiveProfile(userId) {
+      try {
+        const res = await fetch('/api/auth/switch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          activeUserId = userId;
+          localStorage.setItem('phoenix_active_user_id', activeUserId);
+          await loadUserProfile(activeUserId);
+          closeProfileModal();
+        }
+      } catch (e) {
+        console.error("Error switching profile:", e);
+      }
+    }
+
+    // Google Sign-In Handler
+    async function handleGoogleSignIn() {
+      let googleEmail = prompt("Sign in with Google - Enter your Google Email:", "scholar.jee@gmail.com");
+      if (!googleEmail || !googleEmail.includes('@')) return;
+
+      let defaultName = googleEmail.split('@')[0].replace(/[._]/g, ' ').toUpperCase();
+      let studentName = prompt("Confirm your Student Name for this Google Profile:", defaultName);
+      if (!studentName) studentName = defaultName;
+
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            google_id: 'g_' + btoa(googleEmail).slice(0, 12),
+            email: googleEmail,
+            name: studentName,
+            avatar_url: null
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+          activeUserId = data.user.id;
+          localStorage.setItem('phoenix_active_user_id', activeUserId);
+          await loadUserProfile(activeUserId);
+          closeProfileModal();
+          alert(`Successfully signed in with Google! Welcome, ${data.user.name}. Your learning progress will now be stored in your personalized account.`);
+        }
+      } catch (err) {
+        alert("Google sign in failed. Please try again.");
+      }
+    }
+
+    // Add New Profile Manual Registration
+    async function handleCreateNewProfile(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-user-name').value.trim();
+      const email = document.getElementById('new-user-email').value.trim();
+      const classLevel = parseInt(document.getElementById('new-user-class').value);
+      const targetExam = document.getElementById('new-user-exam').value;
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            class_level: classLevel,
+            target_exam: targetExam,
+            selected_subjects: ["mathematics", "physics", "chemistry"]
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+          activeUserId = data.user.id;
+          localStorage.setItem('phoenix_active_user_id', activeUserId);
+          await loadUserProfile(activeUserId);
+          closeProfileModal();
+        } else if (data.error) {
+          alert(data.error);
+        }
+      } catch (err) {
+        alert("Failed to create profile. Please check details.");
+      }
+    }
+
+    // Save Profile Preferences to SQLite Backend
+    async function handleSaveProfileUpdates(e) {
+      e.preventDefault();
+      const name = document.getElementById('input-profile-name').value.trim();
+      const phone = document.getElementById('input-profile-phone').value.trim();
+      const classLevel = parseInt(document.getElementById('input-profile-class').value);
+      const targetExam = document.getElementById('input-profile-exam').value;
+      const dailyGoal = parseInt(document.getElementById('input-profile-goal').value);
+
+      const subjects = [];
+      if (document.getElementById('subj-math')?.checked) subjects.push('mathematics');
+      if (document.getElementById('subj-physics')?.checked) subjects.push('physics');
+      if (document.getElementById('subj-chemistry')?.checked) subjects.push('chemistry');
+      if (document.getElementById('subj-cs')?.checked) subjects.push('computer-science');
+
+      try {
+        const res = await fetch('/api/user/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: activeUserId,
+            updates: {
+              name,
+              phone,
+              class_level: classLevel,
+              target_exam: targetExam,
+              daily_goal_minutes: dailyGoal,
+              selected_subjects: subjects
+            }
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const status = document.getElementById('profile-save-status');
+          status.classList.remove('hidden');
+          setTimeout(() => status.classList.add('hidden'), 3000);
+          await loadUserProfile(activeUserId);
+        }
+      } catch (err) {
+        console.error("Save profile error:", err);
+      }
+    }
+
+    // Call loadUserProfile on initial page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadUserProfile();
+    });
+  </script>
+</body>
+</html>
