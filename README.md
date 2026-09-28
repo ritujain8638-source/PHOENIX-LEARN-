@@ -87,3 +87,48 @@ PhoenixLearn is a full-stack, AI-driven adaptive education platform that continu
 
 4. **Visit the Platform**:
    Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## ⚡ 1-Click Deployment to Vercel
+
+The platform is pre-configured with `vercel.json`, `.npmrc`, serverless Next.js edge API routes, and fault-tolerant production build settings.
+
+### Option A: Deploy via GitHub (Recommended)
+
+1. **Push your repository to GitHub**:
+   ```bash
+   git push origin main
+   ```
+
+2. **Import to Vercel**:
+   - Go to [vercel.com/new](https://vercel.com/new).
+   - Select your repository (`PHOENIX-LEARN-`).
+   - Framework Preset will auto-detect as **Next.js**.
+
+3. **Add Environment Variables**:
+   Under **Environment Variables**, add:
+   - `GEMINI_API_KEY`: Your Google Gemini API Key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+   - *(Optional)* `NEXT_PUBLIC_GEMINI_API_KEY`: Same key (if client-side direct calls are enabled).
+
+4. **Click Deploy**:
+   Vercel runs `npm install --legacy-peer-deps` and `npm run build` automatically. Within 90 seconds, your site is live with a global CDN and automatic HTTPS!
+
+---
+
+### Option B: Deploy via Vercel CLI
+
+```bash
+# 1. Install or run Vercel CLI
+npx vercel
+
+# 2. Deploy directly to production
+npx vercel --prod
+```
+
+### URLs on Vercel:
+- **Next.js App**: `https://<your-project>.vercel.app/`
+- **Standalone App**: `https://<your-project>.vercel.app/app`
+- **AI Copilot API**: `https://<your-project>.vercel.app/api/copilot`
+- **Multi-User Profiles API**: `https://<your-project>.vercel.app/api/auth/profiles`
+
