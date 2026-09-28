@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -836,12 +836,9 @@ const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: 'videos', label: 'Videos', emoji: '▶️' },
 ]
 
-export default function SubjectPage({
-  params,
-}: {
-  params: Promise<{ subjectId: string }>
-}) {
-  const { subjectId } = use(params)
+export default function SubjectPage() {
+  const routeParams = useParams()
+  const subjectId = (routeParams?.subjectId as string) || 'mathematics'
   const subject = getSubjectData(subjectId)
   const [tab, setTab] = useState<Tab>('chapters')
   const [showIntro, setShowIntro] = useState(true)

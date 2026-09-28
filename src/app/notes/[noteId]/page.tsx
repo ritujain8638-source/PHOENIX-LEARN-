@@ -240,7 +240,7 @@ function BookPage({ page, index, totalPages }: { page: NotePage; index: number; 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function NoteViewerPage({ params }: { params: { noteId: string } }) {
+export default function NoteViewerPage() {
   const [mode, setMode] = useState<'2D' | '3D' | 'PDF'>('2D')
   const [currentPage, setCurrentPage] = useState(0)
   const [fontSize, setFontSize] = useState(15)
