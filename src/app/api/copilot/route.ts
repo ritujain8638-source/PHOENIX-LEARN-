@@ -5,12 +5,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { message, history, imageBase64, context } = body;
 
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json({
         reply:
-          "⚠️ Gemini API key is not configured. Please add `NEXT_PUBLIC_GEMINI_API_KEY` to your `.env.local` file and restart the dev server.",
+          "⚠️ Gemini API key is not configured. Please add `GEMINI_API_KEY` or `NEXT_PUBLIC_GEMINI_API_KEY` to your Vercel Environment Variables.",
       });
     }
 

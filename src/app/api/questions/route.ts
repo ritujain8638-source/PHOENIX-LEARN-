@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
       type = 'mcq',
     } = body;
 
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
     if (!apiKey) {
-      console.error('NEXT_PUBLIC_GEMINI_API_KEY is not set');
+      console.error('GEMINI_API_KEY is not set');
       return NextResponse.json({ questions: [], error: 'API key not configured' });
     }
 
