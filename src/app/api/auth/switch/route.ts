@@ -1,34 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserById, setActiveUserId } from '@/lib/server-state';
+import { requireAuthenticatedUser, profileFromAuthUser, backendErrorResponse } from '@/lib/supabase-server';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { user_id } = body;
-
-    if (!user_id) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    const { supabase, user } = await requireAuthenticatedUser();
+    if (body.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'You can only switch to profiles linked to your signed-in account.' },
+        { status: 403 }
+      );
     }
 
-    const user = getUserById(user_id);
-    if (!user) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    setActiveUserId(user.id);
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      message: `Switched to profile: ${user.name}`,
-      user,
-      learning_state: {
-        active_gaps: [],
-        topics_in_progress: 3,
-        suggested_next_topic: 'math-t9',
-      },
+      message: `Signed in as ${profile.name}`,
+      user: profileFromAuthUser(user, profile),
+      learning_state: { active_gaps: [], topics_in_progress: 0, suggested_next_topic: null },
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (error) {
+    return backendErrorResponse(error);
   }
 }

@@ -1,32 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserById, saveUser } from '@/lib/server-state';
+import { requireAuthenticatedUser, backendErrorResponse } from '@/lib/supabase-server';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { user_id = 'user-demo-1', topic_id = 'math-t9', score_percent = 80, time_spent_seconds = 120 } = body;
+    const topicId = body.topic_id ?? body.topicId;
+    const score = Number(body.score_percent ?? body.score);
+    const timeSpentSeconds = Number(body.time_spent_seconds ?? body.timeSpentSeconds ?? 0);
+    const responses = body.responses ?? [];
 
-    const user = getUserById(user_id);
-    const xpGained = Math.round((Number(score_percent) / 100) * 150 + 25);
-
-    if (user) {
-      user.total_xp += xpGained;
-      saveUser(user);
+    if (typeof topicId !== 'string' || !topicId.trim() || topicId.length > 160) {
+      return NextResponse.json({ error: 'topic_id is required.' }, { status: 400 });
+    }
+    if (!Number.isFinite(score) || score < 0 || score > 100 || !Number.isInteger(timeSpentSeconds) || timeSpentSeconds < 0 || timeSpentSeconds > 86400) {
+      return NextResponse.json({ error: 'Quiz score or time spent is invalid.' }, { status: 400 });
+    }
+    if (!Array.isArray(responses)) {
+      return NextResponse.json({ error: 'responses must be an array.' }, { status: 400 });
+    }
+    if (JSON.stringify(responses).length > 50_000) {
+      return NextResponse.json({ error: 'Quiz responses exceed the maximum allowed size.' }, { status: 413 });
     }
 
+    const { supabase } = await requireAuthenticatedUser();
+    const { data, error } = await supabase.rpc('record_quiz_submission', {
+      p_topic_id: topicId.trim(),
+      p_score_percent: Math.round(score),
+      p_time_spent_seconds: timeSpentSeconds,
+      p_responses: responses,
+    });
+    if (error) throw error;
+
     return NextResponse.json({
-      success: true,
-      mastery: Math.min(100, Math.round(Number(score_percent) * 0.9 + 10)),
-      xp_gained: xpGained,
-      streak_updated: true,
-      message: score_percent >= 80 ? 'Mastery unlocked! Phoenix level increased!' : 'Great effort! Review the suggested practice problems.',
+      ...data,
+      mastery: data.new_mastery,
+      xp_gained: data.earned_xp,
+      streak_updated: false,
+      message: data.new_mastery >= 80
+        ? 'Mastery unlocked!'
+        : 'Progress saved. Review the suggested practice problems.',
       diagnosis: {
-        weak_concepts: score_percent < 70 ? ['Review Vieta relations for higher degree equations'] : [],
-        strengths: ['Analytical calculation', 'Speed and accuracy'],
+        weak_concepts: data.status === 'gap_detected' ? [topicId] : [],
+        strengths: score >= 80 ? ['Strong quiz performance'] : [],
       },
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (error) {
+    return backendErrorResponse(error);
   }
 }

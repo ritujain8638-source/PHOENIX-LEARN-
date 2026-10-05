@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface VideoRecommendation {
   title: string;
   channel: string;
@@ -12,131 +10,90 @@ interface VideoRecommendation {
   reason: string;
 }
 
-// ─── POST Handler ─────────────────────────────────────────────────────────────
+function parseRecommendations(raw: string, topic: string, subject: string): VideoRecommendation[] {
+  const cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+  const parsed: unknown = JSON.parse(cleaned);
+  if (!Array.isArray(parsed)) throw new Error('Gemini returned a non-array video response.');
+
+  return parsed.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const video = item as Partial<VideoRecommendation>;
+    if (typeof video.title !== 'string' || typeof video.channel !== 'string' || typeof video.searchQuery !== 'string') {
+      return [];
+    }
+    return [{
+      title: video.title,
+      channel: video.channel,
+      searchQuery: video.searchQuery,
+      duration: typeof video.duration === 'string' ? video.duration : 'Duration unavailable',
+      description: typeof video.description === 'string' ? video.description : `Learn about ${topic}`,
+      thumbnail: typeof video.thumbnail === 'string' && /^https:\/\/(www\.)?youtube\.com\//.test(video.thumbnail)
+        ? video.thumbnail
+        : '',
+      reason: typeof video.reason === 'string' ? video.reason : `Suggested for ${topic} in ${subject}.`,
+    }];
+  }).slice(0, 3);
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { topic, subject, chapter } = body;
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Request body must be valid JSON.' }, { status: 400 });
+    }
 
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const topic = typeof body.topic === 'string' ? body.topic.trim() : '';
+    const subject = typeof body.subject === 'string' ? body.subject.trim() : '';
+    const chapter = typeof body.chapter === 'string' ? body.chapter.trim() : '';
+    if (!topic || topic.length > 160 || !subject || subject.length > 80 || chapter.length > 120) {
+      return NextResponse.json({ error: 'A valid topic and subject are required.' }, { status: 400 });
+    }
 
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('NEXT_PUBLIC_GEMINI_API_KEY is not set');
-      return NextResponse.json({ videos: [], error: 'API key not configured' });
+      return NextResponse.json({ error: 'Video recommendations are not configured on this server.' }, { status: 503 });
     }
 
-    if (!topic || !subject) {
-      return NextResponse.json({ videos: [], error: 'topic and subject are required' });
+    const prompt = `Recommend 3 reputable educational YouTube videos for a Class 11-12 student learning "${topic}" in ${subject}${chapter ? ` (Chapter: ${chapter})` : ''}. Return only a JSON array with title, channel, searchQuery, duration, description, thumbnail (a real YouTube URL or empty string), and reason. Do not invent exact video IDs; use an empty thumbnail if unknown.`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
+    let response: Response;
+    try {
+      response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.5, maxOutputTokens: 2048, responseMimeType: 'application/json' },
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
     }
-
-    // ── Build prompt ─────────────────────────────────────────────────────────
-    const prompt = `Suggest 3 specific YouTube video recommendations for a Class 11-12 student learning about "${topic}" in ${subject}${chapter ? ` (Chapter: ${chapter})` : ''}.
-
-Return as a JSON array with this exact structure:
-[
-  {
-    "title": "specific video title that would appear on YouTube",
-    "channel": "channel name (e.g., 3Blue1Brown, Physics Wallah, Khan Academy, Veritasium, MIT OpenCourseWare, Organic Chemistry Tutor)",
-    "searchQuery": "exact YouTube search query string a student would type to find this video",
-    "duration": "realistic estimated duration like '18 min' or '45 min'",
-    "description": "one concise line describing exactly what concept or problem this video covers",
-    "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
-    "reason": "one sentence explaining why this specific video is the best choice for this topic"
-  }
-]
-
-Important rules:
-- Suggest videos from well-known, reputable educational channels only.
-- For Indian curriculum topics, prefer Physics Wallah, Vedantu, Unacademy, or similar.
-- For conceptual topics, prefer 3Blue1Brown, Veritasium, MinutePhysics, or similar.
-- For coding topics, prefer Traversy Media, Fireship, CS Dojo, or similar.
-- The searchQuery should be realistic and specific enough to find the video.
-- Do NOT invent channel names; use only real, established channels.
-- Return ONLY the JSON array, no markdown, no extra text.`;
-
-    // ── Call Gemini API ──────────────────────────────────────────────────────
-    const geminiModel = 'gemini-1.5-flash';
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
-
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.5,
-          topK: 32,
-          topP: 0.9,
-          maxOutputTokens: 2048,
-          responseMimeType: 'application/json',
-        },
-      }),
-    });
 
     if (!response.ok) {
-      const errText = await response.text().catch(() => '');
-      console.error('Gemini YouTube error:', response.status, errText);
-      return NextResponse.json({ videos: [] });
+      console.error('[YouTube] Gemini request failed:', response.status);
+      return NextResponse.json({ error: 'Video recommendation service is temporarily unavailable.' }, { status: 502 });
     }
 
     const data = await response.json();
-
-    // ── Extract text ─────────────────────────────────────────────────────────
-    const rawText: string =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-
-    if (!rawText) {
-      console.warn('Empty response from Gemini YouTube endpoint');
-      return NextResponse.json({ videos: [] });
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (typeof rawText !== 'string' || !rawText.trim()) {
+      return NextResponse.json({ error: 'Video recommendation service returned no content.' }, { status: 502 });
     }
-
-    // ── Parse JSON ───────────────────────────────────────────────────────────
-    try {
-      // Strip markdown code fences if present
-      const cleaned = rawText
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/\s*```$/i, '')
-        .trim();
-
-      const videos: VideoRecommendation[] = JSON.parse(cleaned);
-
-      if (!Array.isArray(videos)) {
-        throw new Error('Response is not an array');
-      }
-
-      // Sanitize and validate each video entry
-      const sanitized: VideoRecommendation[] = videos
-        .filter((v) => v && typeof v === 'object')
-        .map((v) => ({
-          title: v.title ?? 'Educational Video',
-          channel: v.channel ?? 'Educational Channel',
-          searchQuery: v.searchQuery ?? `${topic} ${subject} tutorial`,
-          duration: v.duration ?? '15 min',
-          description: v.description ?? `Learn about ${topic}`,
-          // Replace any non-YouTube thumbnails with a reliable placeholder
-          thumbnail:
-            typeof v.thumbnail === 'string' && v.thumbnail.includes('youtube.com')
-              ? v.thumbnail
-              : `https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg`,
-          reason: v.reason ?? `Great introduction to ${topic}`,
-        }))
-        .slice(0, 3); // Cap at 3 videos
-
-      return NextResponse.json({ videos: sanitized });
-    } catch (parseError) {
-      console.error('Failed to parse YouTube JSON:', parseError);
-      console.error('Raw text was:', rawText.slice(0, 500));
-      return NextResponse.json({ videos: [] });
+    const videos = parseRecommendations(rawText, topic, subject);
+    if (videos.length === 0) {
+      return NextResponse.json({ error: 'Video recommendation service returned no valid recommendations.' }, { status: 502 });
     }
+    return NextResponse.json({ videos });
   } catch (error) {
-    console.error('YouTube route error:', error);
-    return NextResponse.json({ videos: [] });
+    if (error instanceof Error && error.name === 'AbortError') {
+      return NextResponse.json({ error: 'Video recommendation request timed out.' }, { status: 504 });
+    }
+    console.error('[YouTube] Request failed:', error);
+    return NextResponse.json({ error: 'Unable to get video recommendations.' }, { status: 502 });
   }
 }

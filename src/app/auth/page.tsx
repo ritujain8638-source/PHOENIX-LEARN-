@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { useUserStore } from '@/hooks/useUser';
+import { useUserStore, type User } from '@/hooks/useUser';
 import { toast } from 'sonner';
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
@@ -43,6 +43,36 @@ const signInSchema = z.object({
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
 type SignInFormData = z.infer<typeof signInSchema>;
+
+function mapProfileToUser(profile: {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  avatar_url?: string | null;
+  total_xp?: number;
+  level?: number;
+  streak?: number;
+  longest_streak?: number;
+  created_at?: string;
+  selected_subjects?: string[];
+}): User {
+  return {
+    id: profile.id,
+    email: profile.email,
+    displayName: profile.name,
+    avatarUrl: profile.avatar_url || profile.avatar || '🦅',
+    xp: profile.total_xp ?? 0,
+    level: profile.level ?? 1,
+    streak: profile.streak ?? 0,
+    longestStreak: profile.longest_streak ?? profile.streak ?? 0,
+    lastActiveDate: null,
+    joinedAt: profile.created_at ?? new Date().toISOString(),
+    progress: {},
+    badges: [],
+    preferredSubjects: profile.selected_subjects ?? [],
+  };
+}
 
 // ─── Password Strength ───────────────────────────────────────────────────────
 
@@ -258,38 +288,6 @@ function GoogleIcon() {
 
 // ─── Google OAuth Modal ───────────────────────────────────────────────────────
 
-interface GoogleAccountPreset {
-  name: string;
-  email: string;
-  avatar: string;
-  classLevel: number;
-  targetExam: string;
-}
-
-const PRESET_GOOGLE_ACCOUNTS: GoogleAccountPreset[] = [
-  {
-    name: 'Aryan Sharma',
-    email: 'aryan.sharma@gmail.com',
-    avatar: '🦅',
-    classLevel: 11,
-    targetExam: 'JEE Advanced 2026',
-  },
-  {
-    name: 'Ananya Deshmukh',
-    email: 'ananya.deshmukh@gmail.com',
-    avatar: '⚡',
-    classLevel: 12,
-    targetExam: 'JEE Main & BITSAT',
-  },
-  {
-    name: 'Rohan Verma',
-    email: 'rohan.verma@gmail.com',
-    avatar: '🔥',
-    classLevel: 10,
-    targetExam: 'CBSE Class 10 Boards',
-  },
-];
-
 function GoogleAuthModal({
   isOpen,
   onClose,
@@ -297,7 +295,6 @@ function GoogleAuthModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const router = useRouter();
   const [isCustom, setIsCustom] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customEmail, setCustomEmail] = useState('');
@@ -307,72 +304,21 @@ function GoogleAuthModal({
 
   if (!isOpen) return null;
 
-  const handleLogin = async (acc: {
-    name: string;
-    email: string;
-    avatar: string;
-    classLevel: number;
-    targetExam: string;
-  }) => {
+  const handleLogin = async () => {
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: acc.email,
-          name: acc.name,
-          avatar_url: acc.avatar,
-          picture: acc.avatar,
-          google_id: 'g-' + Math.random().toString(36).substring(2, 10),
-          class_level: acc.classLevel,
-          target_exam: acc.targetExam,
-        }),
+        body: JSON.stringify({}),
       });
-
       const data = await res.json();
-      const u = data.user || {
-        id: 'user-g-' + Date.now().toString(36),
-        name: acc.name,
-        email: acc.email,
-        avatar: acc.avatar,
-        total_xp: 1250,
-        streak: 5,
-        level: 3,
-        class_level: acc.classLevel,
-        target_exam: acc.targetExam,
-        selected_subjects: ['mathematics', 'physics', 'chemistry'],
-      };
-
-      const userPayload = {
-        id: u.id,
-        email: u.email,
-        displayName: u.name,
-        avatarUrl: u.avatar || acc.avatar,
-        xp: u.total_xp || 1250,
-        level: u.level || 3,
-        streak: u.streak || 5,
-        longestStreak: u.streak || 5,
-        lastActiveDate: new Date().toISOString(),
-        joinedAt: new Date().toISOString(),
-        progress: {},
-        badges: ['Google Verified', 'Phoenix Scholar'],
-        preferredSubjects: u.selected_subjects || ['mathematics', 'physics', 'chemistry'],
-      };
-
-      useUserStore.getState().setUser(userPayload);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('phoenix_user', JSON.stringify(userPayload));
-        localStorage.setItem('phoenix_active_profile', JSON.stringify(u));
+      if (!res.ok || !data.authorization_url) {
+        throw new Error(data.error || 'Google sign-in could not be started.');
       }
-
-      toast.success(`Signed in with Google as ${acc.name}!`);
-      onClose();
-      router.push('/dashboard');
-    } catch {
-      toast.success(`Signed in as ${acc.name}!`);
-      onClose();
-      router.push('/dashboard');
+      window.location.assign(data.authorization_url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Google sign-in failed.');
     } finally {
       setIsSubmitting(false);
     }
@@ -403,55 +349,22 @@ function GoogleAuthModal({
           Choose an account to continue to <span className="text-orange-400 font-semibold">PhoenixLearn</span>
         </p>
 
-        {/* Existing / Preset Google Accounts */}
-        <div className="space-y-2.5 mb-4">
-          {PRESET_GOOGLE_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.email}
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => handleLogin(acc)}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/50 transition-all group text-left"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-white/15 flex items-center justify-center text-xl shrink-0">
-                  {acc.avatar}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-white group-hover:text-orange-400 transition-colors truncate">
-                    {acc.name}
-                  </div>
-                  <div className="text-xs text-white/50 truncate font-mono">{acc.email}</div>
-                </div>
-              </div>
-              <span className="text-xs text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity font-semibold shrink-0">
-                Continue →
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Custom Account Toggle */}
         {!isCustom ? (
           <button
             type="button"
-            onClick={() => setIsCustom(true)}
-            className="w-full py-3 px-4 rounded-2xl border border-dashed border-white/20 hover:border-orange-400/60 bg-white/[0.02] text-xs font-semibold text-white/70 hover:text-white transition flex items-center justify-center gap-2"
+            disabled={isSubmitting}
+            onClick={handleLogin}
+            className="w-full py-3 px-4 rounded-2xl border border-white/20 hover:border-orange-400/60 bg-white/[0.02] text-sm font-semibold text-white/70 hover:text-white transition flex items-center justify-center gap-2 disabled:opacity-60"
           >
-            <span>＋</span> Use another Google Account
+            <GoogleIcon />
+            {isSubmitting ? 'Connecting to Google…' : 'Continue with Google'}
           </button>
         ) : (
           <form
             onSubmit={(e) => {
               e.preventDefault();
               if (!customEmail) return;
-              handleLogin({
-                name: customName || customEmail.split('@')[0],
-                email: customEmail,
-                avatar: '🦅',
-                classLevel: customClass,
-                targetExam: customExam,
-              });
+              handleLogin();
             }}
             className="space-y-3 bg-white/[0.03] p-4 rounded-2xl border border-white/10"
           >
@@ -617,31 +530,15 @@ function SignUpForm() {
         }),
       });
       const json = await res.json();
-      const u = json.user || {
-        id: 'user-' + Date.now().toString(36),
-        name: data.fullName,
-        email: data.email,
-        total_xp: 250,
-        streak: 1,
-        level: 1,
-        class_level: Number(data.studentClass),
-        selected_subjects: data.subjects,
-      };
-      const userPayload = {
-        id: u.id,
-        email: u.email,
-        displayName: data.fullName,
-        avatarUrl: '🔥',
-        xp: 250,
-        level: 1,
-        streak: 1,
-        longestStreak: 1,
-        lastActiveDate: new Date().toISOString(),
-        joinedAt: new Date().toISOString(),
-        progress: {},
-        badges: ['Rising Flame'],
-        preferredSubjects: data.subjects,
-      };
+      if (res.status === 202 && json.requires_email_confirmation) {
+        toast.success(json.message || 'Check your email to confirm your account.');
+        return;
+      }
+      if (!res.ok || !json.user) {
+        throw new Error(json.error || 'Account registration failed.');
+      }
+      const u = json.user as Parameters<typeof mapProfileToUser>[0];
+      const userPayload = mapProfileToUser(u);
       useUserStore.getState().setUser(userPayload);
       if (typeof window !== 'undefined') {
         localStorage.setItem('phoenix_user', JSON.stringify(userPayload));
@@ -649,8 +546,8 @@ function SignUpForm() {
       }
       toast.success(`Account created! Welcome, ${data.fullName}`);
       router.push('/dashboard');
-    } catch {
-      router.push('/dashboard');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Account registration failed.');
     } finally {
       setIsLoading(false);
     }
@@ -851,32 +748,11 @@ function SignInForm() {
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       const json = await res.json();
-      const u = json.user || {
-        id: 'user-' + Date.now().toString(36),
-        name: data.email.split('@')[0],
-        email: data.email,
-        total_xp: 750,
-        streak: 3,
-        level: 2,
-        class_level: 11,
-        target_exam: 'JEE Main',
-        selected_subjects: ['mathematics', 'physics'],
-      };
-      const userPayload = {
-        id: u.id,
-        email: u.email,
-        displayName: u.name || data.email.split('@')[0],
-        avatarUrl: u.avatar || '🦅',
-        xp: u.total_xp || 750,
-        level: u.level || 2,
-        streak: u.streak || 3,
-        longestStreak: u.streak || 3,
-        lastActiveDate: new Date().toISOString(),
-        joinedAt: new Date().toISOString(),
-        progress: {},
-        badges: ['Phoenix Scholar'],
-        preferredSubjects: u.selected_subjects || ['mathematics', 'physics'],
-      };
+      if (!res.ok || !json.user) {
+        throw new Error(json.error || 'Sign-in failed.');
+      }
+      const u = json.user as Parameters<typeof mapProfileToUser>[0];
+      const userPayload = mapProfileToUser(u);
       useUserStore.getState().setUser(userPayload);
       if (typeof window !== 'undefined') {
         localStorage.setItem('phoenix_user', JSON.stringify(userPayload));
@@ -884,8 +760,8 @@ function SignInForm() {
       }
       toast.success(`Welcome back, ${userPayload.displayName}!`);
       router.push('/dashboard');
-    } catch {
-      router.push('/dashboard');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Sign-in failed.');
     } finally {
       setIsLoading(false);
     }

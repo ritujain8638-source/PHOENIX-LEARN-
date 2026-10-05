@@ -3,13 +3,14 @@
 // ─────────────────────────────────────────────
 
 import { GoogleGenAI } from '@google/genai';
+import 'server-only';
 
 // ── Client Initialisation ─────────────────────
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '';
+const apiKey = process.env.GEMINI_API_KEY ?? '';
 const client = new GoogleGenAI({ apiKey });
 
-const MODEL = 'gemini-3.8-flash';
+const MODEL = 'gemini-2.5-flash';
 
 // ── Types ─────────────────────────────────────
 

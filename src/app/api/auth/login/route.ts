@@ -1,34 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByEmail, setActiveUserId } from '@/lib/server-state';
+import { createSupabaseServerClient, profileFromAuthUser, backendErrorResponse } from '@/lib/supabase-server';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email } = body;
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password) {
+      return NextResponse.json({ error: 'A valid email and password are required.' }, { status: 400 });
     }
 
-    const user = getUserByEmail(email);
-    if (!user) {
-      return NextResponse.json({ error: 'User profile not found with this email' }, { status: 404 });
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      return NextResponse.json({ error: 'Email or password is incorrect.' }, { status: 401 });
     }
 
-    setActiveUserId(user.id);
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+    if (profileError) throw profileError;
 
     return NextResponse.json({
       success: true,
-      message: `Signed in as ${user.name}`,
-      user,
-      learning_state: {
-        active_gaps: [],
-        topics_in_progress: 3,
-        suggested_next_topic: 'math-t9',
-      },
+      user: profileFromAuthUser(data.user, profile),
+      learning_state: { active_gaps: [], topics_in_progress: 0, suggested_next_topic: null },
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (error) {
+    return backendErrorResponse(error);
   }
 }

@@ -98,11 +98,22 @@ export const useUserStore = create<UserStore>()(
        * Clears the user session, resetting all auth state.
        */
       logout: () => {
+        void fetch("/api/auth/logout", { method: "POST" }).then((response) => {
+          if (!response.ok) {
+            console.error(`[useUser] Server sign-out failed (${response.status}).`);
+          }
+        }).catch((error: unknown) => {
+          console.error("[useUser] Server sign-out failed:", error);
+        });
         set({
           user: null,
           isAuthenticated: false,
           isLoading: false,
         });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("phoenix_user");
+          localStorage.removeItem("phoenix_active_profile");
+        }
       },
 
       /**

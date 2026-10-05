@@ -23,8 +23,8 @@ PhoenixLearn is a full-stack, AI-driven adaptive education platform that continu
 - **Computer Science & Coding**: Python basics, OOP, Data Structures (Arrays, Linked Lists, Trees, Graphs), Sorting Algorithms, and Big-O Analysis.
 - **Seamless JEE Integration**: No segregated isolation for JEE; questions are tagged by difficulty from Easy to Hard and JEE PYQs, allowing learners to progress naturally.
 
-### 4. 🤖 24/7 AI Copilot with Photo Doubt Solving (`gemini-3.8-flash`)
-- **Interactions API Driven**: Uses Google Gemini's latest API (`gemini-3.8-flash`) for multi-turn academic doubt solving.
+### 4. 🤖 24/7 AI Copilot with Photo Doubt Solving (`gemini-2.5-flash`)
+- **Server-side Gemini API**: Uses Google's Gemini API for multi-turn academic doubt solving without exposing the API key in browser bundles.
 - **Multimodal Image Doubts**: Upload camera photos or textbook screenshots for step-by-step problem breakdown.
 - **Full LaTeX Math & Code**: Rendered in real-time with KaTeX and syntax-highlighted code blocks.
 - **AI Recommendation Engine**: Dynamically curates relevant YouTube video lectures from top channels (3Blue1Brown, Physics Wallah, Khan Academy) tailored to fill the student's specific misconception.
@@ -59,7 +59,7 @@ PhoenixLearn is a full-stack, AI-driven adaptive education platform that continu
 - **Styling**: Tailwind CSS with custom Phoenix color scales, neon glow filters, and responsive grids
 - **Animations**: Framer Motion, CSS Keyframe 3D Transforms, Canvas Particle Engine
 - **Math & Equations**: KaTeX (`react-katex`, `remark-math`, `rehype-katex`)
-- **AI / LLM**: `@google/genai` (Gemini 3.8 Flash Interactions API)
+- **AI / LLM**: Gemini 2.5 Flash via server-side API routes
 - **State Management**: Zustand with persistent storage (`useUserStore`, `useProgress`, `useStreak`)
 - **Icons & Visuals**: Lucide Icons, bespoke SVG Phoenix mascot
 
@@ -70,22 +70,28 @@ PhoenixLearn is a full-stack, AI-driven adaptive education platform that continu
 1. **Set Environment Variables**:
    Copy or configure `.env.local`:
    ```bash
-   NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+   GEMINI_API_KEY=your_gemini_api_key_here
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-key
    ```
 
-2. **Install Dependencies**:
+2. **Configure Supabase Auth and Database**:
+   - Run `supabase/migrations/20261005000000_backend.sql` in the Supabase SQL editor (or apply it with the Supabase CLI).
+   - Enable email/password authentication. Disable email confirmation only if registration should sign the student in immediately; otherwise the app asks them to confirm by email.
+   - To enable Google sign-in, configure the Google provider in Supabase Auth and add `/auth/callback` to the allowed redirect URLs.
+   - Leaderboard participation is private by default; a profile must explicitly set `leaderboard_opt_in` to `true` to appear.
+
+3. **Install Dependencies**:
    ```bash
    npm install
    ```
 
-3. **Run Development Server**:
+4. **Run Development Server**:
    ```bash
    npm run dev
    ```
 
-4. **Visit the Platform**:
+5. **Visit the Platform**:
    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
@@ -108,8 +114,7 @@ The platform is pre-configured with `vercel.json`, `.npmrc`, serverless Next.js 
 
 3. **Add Environment Variables**:
    Under **Environment Variables**, add:
-   - `GEMINI_API_KEY`: Your Google Gemini API Key from [Google AI Studio](https://aistudio.google.com/app/apikey).
-   - *(Optional)* `NEXT_PUBLIC_GEMINI_API_KEY`: Same key (if client-side direct calls are enabled).
+   - `GEMINI_API_KEY`: Your server-side Google Gemini API Key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 4. **Click Deploy**:
    Vercel runs `npm install --legacy-peer-deps` and `npm run build` automatically. Within 90 seconds, your site is live with a global CDN and automatic HTTPS!
@@ -131,4 +136,3 @@ npx vercel --prod
 - **Standalone App**: `https://<your-project>.vercel.app/app`
 - **AI Copilot API**: `https://<your-project>.vercel.app/api/copilot`
 - **Multi-User Profiles API**: `https://<your-project>.vercel.app/api/auth/profiles`
-
