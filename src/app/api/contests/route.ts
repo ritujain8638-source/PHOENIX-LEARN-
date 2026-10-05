@@ -1,33 +1,37 @@
 import { NextResponse } from 'next/server';
+import { createSupabaseServerClient, backendErrorResponse } from '@/lib/supabase-server';
 
 export async function GET() {
-  return NextResponse.json({
-    contests: [
-      {
-        id: 'c-1',
-        title: 'Phoenix Weekly Blitz #42',
-        subject: 'Mathematics & Physics',
-        start_time: '2026-10-02T18:00:00Z',
-        duration_minutes: 60,
-        participants_count: 1420,
-        prize_pool: '5000 XP + Top Rank Badge',
-      },
-      {
-        id: 'c-2',
-        title: 'JEE Advanced Sprint Simulation',
-        subject: 'All Subjects',
-        start_time: '2026-10-05T10:00:00Z',
-        duration_minutes: 180,
-        participants_count: 3100,
-        prize_pool: '15000 XP + AIR Predictor',
-      }
-    ],
-    leaderboard: [
-      { rank: 1, name: 'Aarav Sharma', class_level: 'Class 12', xp: 14500, streak: 42, avatar: '🦅', tier: 'Phoenix Sovereign' },
-      { rank: 2, name: 'Diya Patel', class_level: 'Class 12', xp: 13920, streak: 35, avatar: '⚡', tier: 'Solar Blaze' },
-      { rank: 3, name: 'Rohan Verma', class_level: 'Class 11', xp: 12840, streak: 28, avatar: '🔥', tier: 'Crimson Wing' },
-      { rank: 4, name: 'Ananya Deshmukh', class_level: 'Class 12', xp: 11200, streak: 21, avatar: '✨', tier: 'Rising Ember' },
-      { rank: 5, name: 'Kabir Mehta', class_level: 'Class 10', xp: 9800, streak: 19, avatar: '🌟', tier: 'Rising Ember' },
-    ],
-  });
+  try {
+    const supabase = await createSupabaseServerClient();
+    const [{ data: contests, error: contestsError }, { data: leaderboard, error: leaderboardError }] =
+      await Promise.all([
+        supabase
+          .from('contests')
+          .select('id,title,subject,start_time,duration_minutes,prize_pool')
+          .order('start_time', { ascending: true }),
+        supabase
+          .from('leaderboard')
+          .select('rank,name,class_level,xp,streak,avatar,tier')
+          .order('rank', { ascending: true }),
+      ]);
+    if (contestsError) throw contestsError;
+    if (leaderboardError) throw leaderboardError;
+
+    const now = Date.now();
+    return NextResponse.json({
+      contests: (contests ?? []).map((contest) => {
+        const startsAt = new Date(contest.start_time).getTime();
+        const endsAt = startsAt + contest.duration_minutes * 60_000;
+        return {
+          ...contest,
+          status: now < startsAt ? 'upcoming' : now < endsAt ? 'live' : 'past',
+          participants_count: 0,
+        };
+      }),
+      leaderboard: leaderboard ?? [],
+    });
+  } catch (error) {
+    return backendErrorResponse(error);
+  }
 }

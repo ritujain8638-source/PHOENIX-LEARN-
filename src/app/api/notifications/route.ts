@@ -1,36 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const mockNotifications = [
-  {
-    id: 'n-1',
-    type: 'streak',
-    title: '🔥 Daily Streak Shield Active',
-    message: 'You have maintained a 7-day study streak! Solve today\'s 5-minute quiz to keep it burning.',
-    read: false,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'n-2',
-    type: 'contest',
-    title: '🏆 Calculus Grand Clash Tonight',
-    message: 'Math Arena begins at 8:00 PM IST with 1,000 XP up for grabs. Be prepared!',
-    read: false,
-    createdAt: new Date(Date.now() - 3600000).toISOString()
-  },
-  {
-    id: 'n-3',
-    type: 'recommendation',
-    title: '🧠 Targeted Gap Detected',
-    message: 'Phoenix identified a weakness in Complex Numbers (Argand Plane). Tap to review the 3-minute summary.',
-    read: false,
-    createdAt: new Date(Date.now() - 7200000).toISOString()
-  }
-];
+import { requireAuthenticatedUser, backendErrorResponse } from '@/lib/supabase-server';
 
 export async function GET() {
-  return NextResponse.json({ notifications: mockNotifications });
+  try {
+    const { supabase, user } = await requireAuthenticatedUser();
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('id,type,title,message,read,created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+
+    return NextResponse.json({
+      notifications: (data ?? []).map((notification) => ({
+        ...notification,
+        isRead: notification.read,
+        createdAt: notification.created_at,
+      })),
+    });
+  } catch (error) {
+    return backendErrorResponse(error);
+  }
 }
 
 export async function PATCH(req: NextRequest) {
-  return NextResponse.json({ success: true });
+  try {
+    const body = await req.json();
+    const notificationId = body.id;
+    if (!Number.isInteger(notificationId) || notificationId < 1) {
+      return NextResponse.json({ error: 'A valid notification id is required.' }, { status: 400 });
+    }
+
+    const { supabase, user } = await requireAuthenticatedUser();
+    const { data, error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', notificationId)
+      .eq('user_id', user.id)
+      .select('id')
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return NextResponse.json({ error: 'Notification not found.' }, { status: 404 });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return backendErrorResponse(error);
+  }
 }

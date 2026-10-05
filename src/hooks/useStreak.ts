@@ -215,18 +215,32 @@ export function useStreak(): UseStreakReturn {
     writeToStorage(updated);
     setStreakData(updated);
 
-    // Optional: sync with Supabase in the background (non-blocking)
-    // If the API call fails we still have the local data, so no await.
     try {
-      await fetch("/api/streak/sync", {
+      const response = await fetch("/api/streak/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),
-        // Short timeout so we don't block the UI
         signal: AbortSignal.timeout?.(5000),
       });
-    } catch {
-      // Network unavailable or endpoint not implemented yet — ignore
+      if (!response.ok) {
+        throw new Error(`Streak sync failed (${response.status}).`);
+      }
+      const result = await response.json();
+      if (
+        Number.isInteger(result.streak) &&
+        Number.isInteger(result.longestStreak) &&
+        typeof result.lastActiveDate === "string"
+      ) {
+        updated = {
+          streak: result.streak,
+          longestStreak: result.longestStreak,
+          lastActiveDate: result.lastActiveDate,
+        };
+        writeToStorage(updated);
+        setStreakData(updated);
+      }
+    } catch (error) {
+      console.error("[useStreak] Unable to sync streak with the server:", error);
     }
 
     return updated;

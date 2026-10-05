@@ -10,9 +10,7 @@ export async function GET() {
       .eq('id', user.id)
       .single();
     if (error) throw error;
-
-    const currentProfile = profileFromAuthUser(user, profile);
-    return NextResponse.json({ profiles: [currentProfile], active_user_id: user.id, count: 1 });
+    return NextResponse.json({ user: profileFromAuthUser(user, profile) });
   } catch (error) {
     return backendErrorResponse(error);
   }

@@ -283,8 +283,8 @@ export function useProgress(): UseProgressReturn {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topicId, score: clampedScore, timeSpentSeconds }),
-      }).catch(() => {
-        // Ignore — local data is source of truth
+      }).catch((error: unknown) => {
+        console.error("[useProgress] Unable to sync progress with the server:", error);
       });
     },
     [state, update]

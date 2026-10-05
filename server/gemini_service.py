@@ -10,7 +10,7 @@ class GeminiService:
     Handles academic doubt solving, photo analysis, and intelligent recommendations.
     """
 
-    API_KEY = os.getenv("NEXT_PUBLIC_GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
+    API_KEY = os.getenv("GEMINI_API_KEY", "")
 
     SYSTEM_INSTRUCTION = (
         "You are PhoenixLearn's AI Copilot — an academic mentor for Class 9-12 students "

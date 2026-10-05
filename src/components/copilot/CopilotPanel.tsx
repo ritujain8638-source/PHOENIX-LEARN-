@@ -343,9 +343,7 @@ export default function CopilotPanel({ isOpen, onClose, context }: CopilotPanelP
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Strip the data:image/...;base64, prefix for API
-      const base64 = result.split(',')[1];
-      setSelectedImage({ file, base64, previewUrl: result });
+      setSelectedImage({ file, base64: result, previewUrl: result });
     };
     reader.readAsDataURL(file);
 
@@ -432,22 +430,25 @@ export default function CopilotPanel({ isOpen, onClose, context }: CopilotPanelP
       });
 
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'AI Copilot is temporarily unavailable.');
+      }
 
       const aiMsg: Message = {
         id: `a-${Date.now()}`,
         role: 'ai',
-        content: data.reply ?? 'I could not generate a response. Please try again.',
+        content: data.reply,
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, aiMsg]);
-    } catch {
+    } catch (error) {
       setMessages((prev) => [
         ...prev,
         {
           id: `a-err-${Date.now()}`,
           role: 'ai',
-          content: 'Something went wrong connecting to the AI. Please try again! 🔥',
+          content: error instanceof Error ? error.message : 'Something went wrong connecting to the AI.',
           timestamp: new Date(),
         },
       ]);

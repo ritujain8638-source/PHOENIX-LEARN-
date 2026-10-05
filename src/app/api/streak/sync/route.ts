@@ -1,15 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { requireAuthenticatedUser, backendErrorResponse } from '@/lib/supabase-server';
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
-    const body = await req.json();
-    const { userId, streak, lastActiveDate, longestStreak } = body;
-    return NextResponse.json({
-      success: true,
-      streak: streak || 1,
-      lastActiveDate: lastActiveDate || new Date().toISOString()
-    });
+    const { supabase } = await requireAuthenticatedUser();
+    const { data, error } = await supabase.rpc('sync_user_streak');
+    if (error) throw error;
+    return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json({ success: false }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }

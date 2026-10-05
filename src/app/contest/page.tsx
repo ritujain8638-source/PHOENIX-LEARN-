@@ -1,60 +1,66 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+
+interface ContestItem {
+  id: string;
+  title: string;
+  subject: string;
+  start_time: string;
+  duration_minutes: number;
+  prize_pool: string;
+  participants_count: number;
+  status: 'live' | 'upcoming' | 'past';
+}
+
+interface LeaderboardItem {
+  rank: number;
+  name: string;
+  class_level: string;
+  xp: number;
+  streak: number;
+  avatar: string;
+  tier: string;
+}
 
 export default function ContestsPage() {
-  const [filter, setFilter] = useState<'live' | 'upcoming' | 'past'>('live');
-  const [leaderboardFilter, setLeaderboardFilter] = useState<'weekly' | 'all-time'>('weekly');
+  const [filter, setFilter] = useState<'live' | 'upcoming' | 'past'>('upcoming');
+  const [contests, setContests] = useState<ContestItem[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const contests = [
-    {
-      id: 'math-clash-12',
-      title: 'Grand Calculus & Algebra Arena',
-      subject: 'Mathematics (RD Sharma Class 11-12)',
-      duration: '45 Mins',
-      questions: 25,
-      prizeXP: 1000,
-      participants: 1420,
-      status: 'live',
-      endsIn: '02:14:30',
-      difficulty: 'JEE Advanced'
-    },
-    {
-      id: 'physics-sprint',
-      title: 'Quantum & Kinematics Blitz',
-      subject: 'Physics (Mechanics + Waves)',
-      duration: '30 Mins',
-      questions: 20,
-      prizeXP: 750,
-      participants: 980,
-      status: 'live',
-      endsIn: '00:45:10',
-      difficulty: 'JEE Main'
-    },
-    {
-      id: 'organic-showdown',
-      title: 'Reaction Mechanisms Royale',
-      subject: 'Chemistry',
-      duration: '40 Mins',
-      questions: 30,
-      prizeXP: 1200,
-      participants: 2310,
-      status: 'upcoming',
-      startsIn: 'Tomorrow, 7:00 PM',
-      difficulty: 'Hard'
-    }
-  ];
+  useEffect(() => {
+    let active = true;
+    const loadContests = async () => {
+      try {
+        const response = await fetch('/api/contests');
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not load contests.');
+        if (!Array.isArray(result.contests) || !Array.isArray(result.leaderboard)) {
+          throw new Error('Contest response was invalid.');
+        }
+        if (active) {
+          setContests(result.contests);
+          setLeaderboard(result.leaderboard);
+        }
+      } catch (loadError) {
+        if (active) setError(loadError instanceof Error ? loadError.message : 'Could not load contests.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
 
-  const leaderboard = [
-    { rank: 1, name: 'Aarav Sharma', class: 'Class 12', xp: 14500, streak: 42, avatar: '🦅', title: 'Phoenix Sovereign' },
-    { rank: 2, name: 'Diya Patel', class: 'Class 12', xp: 13920, streak: 35, avatar: '⚡', title: 'Solar Blaze' },
-    { rank: 3, name: 'Rohan Verma', class: 'Class 11', xp: 12840, streak: 28, avatar: '🔥', title: 'Crimson Wing' },
-    { rank: 4, name: 'Ananya Roy', class: 'Class 11', xp: 11400, streak: 21, avatar: '🌟', title: 'Rising Ember' },
-    { rank: 5, name: 'Ishaan Gupta', class: 'Class 10', xp: 9850, streak: 19, avatar: '✨', title: 'Kindling Flame' },
-    { rank: 24, name: 'You (Phoenix Learner)', class: 'Class 12', xp: 4200, streak: 7, avatar: '🔥', title: 'Rising Ember', isUser: true }
-  ];
+    void loadContests();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const liveParticipants = contests
+    .filter((contest) => contest.status === 'live')
+    .reduce((total, contest) => total + contest.participants_count, 0);
 
   return (
     <div className="min-h-screen bg-void text-white pb-20">
@@ -75,7 +81,7 @@ export default function ContestsPage() {
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono bg-orange-950/40 border border-orange-500/30 px-3 py-1.5 rounded-full text-orange-400">
-          <span>🔥</span> 1,400+ Competing Live
+          <span>🔥</span> {liveParticipants.toLocaleString()} Competing Live
         </div>
       </header>
 
@@ -102,8 +108,10 @@ export default function ContestsPage() {
 
           {/* Contests List */}
           <div className="space-y-4">
+            {error && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/30 p-4 text-sm text-red-300">{error}</p>}
+            {loading && <p className="text-sm text-zinc-400">Loading contests…</p>}
             {contests
-              .filter((c) => filter === 'all' || c.status === filter || filter === 'live')
+              .filter((contest) => contest.status === filter)
               .map((contest) => (
                 <div
                   key={contest.id}
@@ -111,14 +119,18 @@ export default function ContestsPage() {
                 >
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase bg-red-950/60 border border-red-500/40 text-red-400 animate-pulse">
-                        ● LIVE NOW
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase border ${
+                        contest.status === 'live'
+                          ? 'bg-red-950/60 border-red-500/40 text-red-400 animate-pulse'
+                          : contest.status === 'upcoming'
+                          ? 'bg-orange-950/60 border-orange-500/40 text-orange-300'
+                          : 'bg-white/5 border-white/10 text-zinc-400'
+                      }`}>
+                        {contest.status}
                       </span>
                       <span className="text-xs font-mono text-zinc-400">
-                        Ends in: <strong className="text-amber-300">{contest.endsIn}</strong>
-                      </span>
-                      <span className="text-xs font-mono text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-md bg-orange-950/30">
-                        {contest.difficulty}
+                        {contest.status === 'live' ? 'Started' : contest.status === 'past' ? 'Ended' : 'Starts'}:{' '}
+                        <strong className="text-amber-300">{new Date(contest.start_time).toLocaleString()}</strong>
                       </span>
                     </div>
 
@@ -126,16 +138,15 @@ export default function ContestsPage() {
                     <p className="text-xs text-zinc-400 font-mono">{contest.subject}</p>
 
                     <div className="flex items-center gap-4 text-xs font-mono text-zinc-400 pt-1">
-                      <span>⏱ {contest.duration}</span>
-                      <span>📝 {contest.questions} Questions</span>
-                      <span>👥 {contest.participants} Competing</span>
+                      <span>⏱ {contest.duration_minutes} minutes</span>
+                      <span>👥 {contest.participants_count} Competing</span>
                     </div>
                   </div>
 
                   <div className="flex flex-col items-end gap-2 w-full md:w-auto">
                     <div className="text-right">
                       <div className="text-xs font-mono text-zinc-400">Grand Prize</div>
-                      <div className="text-xl font-black text-amber-400">+{contest.prizeXP} XP</div>
+                      <div className="text-sm font-bold text-amber-400">{contest.prize_pool}</div>
                     </div>
                     <Link
                       href={`/quiz/contest-${contest.id}`}
@@ -146,6 +157,11 @@ export default function ContestsPage() {
                   </div>
                 </div>
               ))}
+            {!loading && !error && contests.filter((contest) => contest.status === filter).length === 0 && (
+              <p className="rounded-xl border border-white/10 bg-zinc-950/80 p-6 text-sm text-zinc-400">
+                No {filter} contests are scheduled.
+              </p>
+            )}
           </div>
         </div>
 
@@ -156,24 +172,7 @@ export default function ContestsPage() {
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <span>👑</span> Global Hall of Fame
               </h2>
-              <div className="flex gap-1 text-[10px] font-mono bg-white/5 p-1 rounded-lg">
-                <button
-                  onClick={() => setLeaderboardFilter('weekly')}
-                  className={`px-2 py-0.5 rounded ${
-                    leaderboardFilter === 'weekly' ? 'bg-orange-500 text-white' : 'text-zinc-400'
-                  }`}
-                >
-                  Weekly
-                </button>
-                <button
-                  onClick={() => setLeaderboardFilter('all-time')}
-                  className={`px-2 py-0.5 rounded ${
-                    leaderboardFilter === 'all-time' ? 'bg-orange-500 text-white' : 'text-zinc-400'
-                  }`}
-                >
-                  All-Time
-                </button>
-              </div>
+              <span className="text-[10px] font-mono text-zinc-400">Opt-in ranking</span>
             </div>
 
             {/* Leaderboard entries */}
@@ -181,11 +180,7 @@ export default function ContestsPage() {
               {leaderboard.map((user) => (
                 <div
                   key={user.rank}
-                  className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
-                    user.isUser
-                      ? 'bg-orange-950/40 border-orange-500/60 ring-1 ring-orange-500/40'
-                      : 'bg-zinc-900/50 border-white/5 hover:border-white/20'
-                  }`}
+                  className="p-3 rounded-xl border bg-zinc-900/50 border-white/5 hover:border-white/20 flex items-center justify-between transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <span
@@ -205,14 +200,9 @@ export default function ContestsPage() {
                     <div>
                       <div className="text-xs font-bold text-white flex items-center gap-1.5">
                         {user.name}
-                        {user.isUser && (
-                          <span className="text-[9px] bg-orange-500 text-white px-1.5 py-0.2 rounded font-mono">
-                            YOU
-                          </span>
-                        )}
                       </div>
                       <div className="text-[10px] font-mono text-zinc-400">
-                        {user.class} • 🔥 {user.streak}d
+                        {user.class_level} • 🔥 {user.streak}d
                       </div>
                     </div>
                   </div>
@@ -222,11 +212,14 @@ export default function ContestsPage() {
                       {user.xp} XP
                     </div>
                     <div className="text-[9px] text-zinc-500 font-mono">
-                      {user.title}
+                      {user.tier}
                     </div>
                   </div>
                 </div>
               ))}
+              {leaderboard.length === 0 && (
+                <p className="text-xs text-zinc-500">No students have opted in to the leaderboard yet.</p>
+              )}
             </div>
           </div>
         </div>

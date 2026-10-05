@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Question {
+interface GeneratedQuestion {
   id: string;
   text: string;
   options: string[];
@@ -12,139 +10,109 @@ interface Question {
   tags: string[];
 }
 
-// ─── POST Handler ─────────────────────────────────────────────────────────────
+function parseGeneratedQuestions(raw: string, topic: string, difficulty: string): GeneratedQuestion[] {
+  const cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+  const parsed: unknown = JSON.parse(cleaned);
+  if (!Array.isArray(parsed)) throw new Error('Gemini returned a non-array question response.');
+
+  return parsed.flatMap((question, index) => {
+    if (!question || typeof question !== 'object') return [];
+    const candidate = question as Partial<GeneratedQuestion>;
+    if (
+      typeof candidate.text !== 'string' ||
+      !candidate.text.trim() ||
+      !Array.isArray(candidate.options) ||
+      candidate.options.length !== 4 ||
+      !candidate.options.every((option) => typeof option === 'string' && option.trim()) ||
+      !Number.isInteger(candidate.correctAnswer) ||
+      candidate.correctAnswer! < 0 ||
+      candidate.correctAnswer! > 3 ||
+      typeof candidate.explanation !== 'string'
+    ) {
+      return [];
+    }
+    return [{
+      id: typeof candidate.id === 'string' ? candidate.id : `question-${index + 1}`,
+      text: candidate.text,
+      options: candidate.options,
+      correctAnswer: candidate.correctAnswer!,
+      explanation: candidate.explanation,
+      difficulty,
+      tags: Array.isArray(candidate.tags) ? candidate.tags.filter((tag): tag is string => typeof tag === 'string') : [topic],
+    }];
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const {
-      topic,
-      subject,
-      difficulty = 'medium',
-      count = 5,
-      type = 'mcq',
-    } = body;
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Request body must be valid JSON.' }, { status: 400 });
+    }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const topic = typeof body.topic === 'string' ? body.topic.trim() : '';
+    const subject = typeof body.subject === 'string' ? body.subject.trim() : '';
+    const difficulty = body.difficulty ?? 'medium';
+    const count = body.count ?? 5;
+    const type = body.type ?? 'mcq';
+    if (!topic || topic.length > 160 || !subject || subject.length > 80) {
+      return NextResponse.json({ error: 'A topic and subject within the allowed length are required.' }, { status: 400 });
+    }
+    if (!['easy', 'medium', 'hard', 'jee'].includes(String(difficulty))) {
+      return NextResponse.json({ error: 'difficulty must be easy, medium, hard, or jee.' }, { status: 400 });
+    }
+    if (!Number.isInteger(count) || Number(count) < 1 || Number(count) > 10) {
+      return NextResponse.json({ error: 'count must be an integer between 1 and 10.' }, { status: 400 });
+    }
+    if (type !== 'mcq') {
+      return NextResponse.json({ error: 'Only mcq question generation is supported.' }, { status: 400 });
+    }
 
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('GEMINI_API_KEY is not set');
-      return NextResponse.json({ questions: [], error: 'API key not configured' });
+      return NextResponse.json({ error: 'Question generation is not configured on this server.' }, { status: 503 });
     }
 
-    if (!topic || !subject) {
-      return NextResponse.json({ questions: [], error: 'topic and subject are required' });
+    const prompt = `Generate ${count} ${difficulty} difficulty multiple-choice questions for a Class 11-12 student studying ${subject}, specifically "${topic}". Return only a JSON array. Each item must have: text, options (exactly four strings), correctAnswer (zero-based integer from 0 to 3), explanation, and tags (string array). Include correct, educational solutions; use LaTeX for math.`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
+    let response: Response;
+    try {
+      response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.6, maxOutputTokens: 4096, responseMimeType: 'application/json' },
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
     }
-
-    // ── Build prompt ─────────────────────────────────────────────────────────
-    const prompt = `Generate ${count} ${difficulty} difficulty ${type} questions for a Class 11-12 student studying ${subject} - specifically about "${topic}".
-
-Return as a JSON array with this exact structure:
-[
-  {
-    "id": "q1",
-    "text": "question text with LaTeX math where needed using $ for inline and $$ for block",
-    "options": ["option A", "option B", "option C", "option D"],
-    "correctAnswer": 0,
-    "explanation": "detailed explanation of why the answer is correct, with step-by-step working",
-    "difficulty": "${difficulty}",
-    "tags": ["tag1", "tag2"]
-  }
-]
-
-Guidelines:
-- For JEE-level questions, include complex application-based problems with multi-step solutions.
-- Make questions challenging but educational.
-- Include real-world applications where possible.
-- Use LaTeX for all mathematical expressions (inline: $expr$, block: $$expr$$).
-- The "correctAnswer" field should be the 0-based index of the correct option.
-- options array must always have exactly 4 items.
-- Include diverse question types: conceptual, numerical, application-based.
-
-Return ONLY the JSON array, no markdown code fences, no extra text.`;
-
-    // ── Call Gemini API ──────────────────────────────────────────────────────
-    const geminiModel = 'gemini-1.5-flash';
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
-
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.6,
-          topK: 40,
-          topP: 0.9,
-          maxOutputTokens: 4096,
-          responseMimeType: 'application/json',
-        },
-      }),
-    });
 
     if (!response.ok) {
-      const errText = await response.text().catch(() => '');
-      console.error('Gemini questions error:', response.status, errText);
-      return NextResponse.json({ questions: [] });
+      console.error('[Questions] Gemini request failed:', response.status);
+      return NextResponse.json({ error: 'Question generation service is temporarily unavailable.' }, { status: 502 });
     }
 
     const data = await response.json();
-
-    // ── Extract text ─────────────────────────────────────────────────────────
-    const rawText: string =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-
-    if (!rawText) {
-      console.warn('Empty response from Gemini questions endpoint');
-      return NextResponse.json({ questions: [] });
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (typeof rawText !== 'string' || !rawText.trim()) {
+      return NextResponse.json({ error: 'Question generation returned no content.' }, { status: 502 });
     }
-
-    // ── Parse JSON ───────────────────────────────────────────────────────────
-    try {
-      // Strip markdown fences if Gemini adds them despite the instruction
-      const cleaned = rawText
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/\s*```$/i, '')
-        .trim();
-
-      const questions: Question[] = JSON.parse(cleaned);
-
-      // Basic validation
-      if (!Array.isArray(questions)) {
-        throw new Error('Response is not an array');
-      }
-
-      // Sanitize: ensure required fields exist
-      const sanitized: Question[] = questions
-        .filter((q) => q && typeof q === 'object')
-        .map((q, i) => ({
-          id: q.id ?? `q${i + 1}`,
-          text: q.text ?? '',
-          options: Array.isArray(q.options) && q.options.length === 4
-            ? q.options
-            : ['Option A', 'Option B', 'Option C', 'Option D'],
-          correctAnswer: typeof q.correctAnswer === 'number'
-            ? Math.max(0, Math.min(3, q.correctAnswer))
-            : 0,
-          explanation: q.explanation ?? '',
-          difficulty: q.difficulty ?? difficulty,
-          tags: Array.isArray(q.tags) ? q.tags : [topic],
-        }));
-
-      return NextResponse.json({ questions: sanitized });
-    } catch (parseError) {
-      console.error('Failed to parse questions JSON:', parseError);
-      console.error('Raw text was:', rawText.slice(0, 500));
-      return NextResponse.json({ questions: [] });
+    const questions = parseGeneratedQuestions(rawText, topic, String(difficulty)).slice(0, Number(count));
+    if (questions.length === 0) {
+      return NextResponse.json({ error: 'Question generation returned no valid questions.' }, { status: 502 });
     }
+    return NextResponse.json({ questions });
   } catch (error) {
-    console.error('Questions route error:', error);
-    return NextResponse.json({ questions: [] });
+    if (error instanceof Error && error.name === 'AbortError') {
+      return NextResponse.json({ error: 'Question generation timed out. Please try again.' }, { status: 504 });
+    }
+    console.error('[Questions] Request failed:', error);
+    return NextResponse.json({ error: 'Unable to generate questions right now.' }, { status: 502 });
   }
 }
